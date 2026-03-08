@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClientGameState, Card } from '@louie/shared';
 import { PlayingCard } from './PlayingCard';
-import { SUIT_SYMBOL, SUIT_COLOR } from '@/lib/cardUtils';
+import { SUIT_SYMBOL } from '@/lib/cardUtils';
 import PlayerHand from './PlayerHand';
 import EventLog from './EventLog';
 
@@ -57,11 +57,6 @@ export default function TrickPlayView({ gameState, onPlayCard }: TrickPlayViewPr
     }
   }, [onPlayCard]);
 
-  const trumpSuit = round.trump?.suit;
-  const trumpColor = trumpSuit
-    ? (SUIT_COLOR[trumpSuit] === '#1a1a1a' ? '#f5f0e8' : SUIT_COLOR[trumpSuit])
-    : '#f5f0e8';
-
   const trickNumber = round.completedTricks.length + 1;
   const currentLeader = gameState.players.find(p => p.id === round.currentLeaderId);
   const selectedCard = gameState.myHand.find(c => c.id === selectedCardId);
@@ -86,14 +81,9 @@ export default function TrickPlayView({ gameState, onPlayCard }: TrickPlayViewPr
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
             <p className="text-xs text-cream/40 uppercase tracking-widest">Scoreboard</p>
             {round.trump && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <span className="text-xs text-cream/40 uppercase tracking-widest">Trump</span>
-                <span className="font-bold text-lg leading-none" style={{ color: trumpColor }}>
-                  {SUIT_SYMBOL[round.trump.suit]}
-                </span>
-                <span className="font-semibold text-sm text-cream/70">
-                  {round.trump.suit}
-                </span>
+                <PlayingCard card={round.trump} size="sm" />
               </div>
             )}
             {gameState.paused && <span className="badge badge-red">⏸ Paused</span>}
