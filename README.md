@@ -86,11 +86,11 @@ See `.env.example` for required environment variables.
 
 ### Frontend → Vercel (one-click)
 
-A `vercel.json` is included in the repo root. Just:
+A `vercel.json` is included in `client/`. Just:
 
 1. Push to GitHub
 2. Go to [vercel.com](https://vercel.com) → **New Project** → import your repo
-3. Leave **Root Directory** blank (Vercel reads `vercel.json` from the root)
+3. Set **Root Directory** to `client`
 4. Add environment variable: `NEXT_PUBLIC_SERVER_URL=https://your-render-server.onrender.com`
 5. Deploy
 
