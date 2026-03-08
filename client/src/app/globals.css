@@ -1,0 +1,162 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-playfair: 'Playfair Display', Georgia, serif;
+  --font-inter: 'Inter', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #2d5a3d;
+  color: #f5f0e8;
+  font-family: var(--font-inter);
+  min-height: 100vh;
+}
+
+/* Felt table texture */
+.felt-bg {
+  background-color: #2d5a3d;
+  background-image:
+    radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.04) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 80%, rgba(0,0,0,0.15) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.05) 0%, transparent 80%);
+}
+
+/* Card panel (container on felt) */
+.panel {
+  background-color: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: 12px;
+  backdrop-filter: blur(2px);
+}
+
+/* Gold separator line */
+.gold-line {
+  border-color: rgba(201, 168, 76, 0.4);
+}
+
+/* Suit colors */
+.suit-red   { color: #e53e3e; }
+.suit-black { color: #1a1a1a; }
+
+/* Scrollbar styling for event log */
+.scroll-thin::-webkit-scrollbar { width: 4px; }
+.scroll-thin::-webkit-scrollbar-track { background: transparent; }
+.scroll-thin::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.4); border-radius: 2px; }
+
+/* Playing card face */
+.playing-card {
+  background: #fefef9;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2);
+  border: 1px solid #e2e8f0;
+}
+
+/* Seat card */
+.seat-card {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+.seat-card.occupied {
+  border-color: rgba(201,168,76,0.5);
+  background: rgba(0,0,0,0.3);
+}
+.seat-card.self {
+  border-color: #c9a84c;
+  box-shadow: 0 0 0 2px rgba(201,168,76,0.3);
+}
+
+/* Button styles */
+.btn-primary {
+  background: linear-gradient(135deg, #c9a84c, #a07830);
+  color: #1a1a1a;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.625rem 1.5rem;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255,255,255,0.1);
+  font-family: var(--font-inter);
+}
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e0c47a, #c9a84c);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(201,168,76,0.4);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: rgba(255,255,255,0.08);
+  color: #f5f0e8;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 0.625rem 1.5rem;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255,255,255,0.15);
+  font-family: var(--font-inter);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255,255,255,0.14);
+  transform: translateY(-1px);
+}
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Input styles */
+.input-felt {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 8px;
+  color: #f5f0e8;
+  padding: 0.625rem 0.875rem;
+  font-family: var(--font-inter);
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.input-felt::placeholder { color: rgba(245,240,232,0.4); }
+.input-felt:focus {
+  outline: none;
+  border-color: #c9a84c;
+  box-shadow: 0 0 0 2px rgba(201,168,76,0.15);
+}
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.badge-gold {
+  background: rgba(201,168,76,0.15);
+  color: #c9a84c;
+  border: 1px solid rgba(201,168,76,0.3);
+}
+.badge-green {
+  background: rgba(74,148,104,0.2);
+  color: #6fcf97;
+  border: 1px solid rgba(74,148,104,0.3);
+}
+.badge-red {
+  background: rgba(229,62,62,0.15);
+  color: #fc8181;
+  border: 1px solid rgba(229,62,62,0.3);
+}

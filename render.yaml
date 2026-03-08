@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: louie-server
+    runtime: node
+    buildCommand: npm install && npm run build --workspace=shared && npm run build --workspace=server
+    startCommand: npm start --workspace=server
+    envVars:
+      - key: CLIENT_URL
+        sync: false
+      - key: NODE_ENV
+        value: production

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(echo \"PATH: $PATH\")",
+      "Bash(brew:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm:*)",
+      "Bash(npx next:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

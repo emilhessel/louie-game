@@ -1,0 +1,28 @@
+{
+  "name": "@louie/client",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@louie/shared": "*",
+    "framer-motion": "^11.0.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "socket.io-client": "^4.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.3.2"
+  }
+}
