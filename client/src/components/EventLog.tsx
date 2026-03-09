@@ -38,11 +38,14 @@ function formatTime(ts: number): string {
 }
 
 export default function EventLog({ events }: EventLogProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to latest event
+  // Scroll the container directly — avoids Safari bug where scrollIntoView
+  // propagates to the page and jumps to the top.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
   }, [events.length]);
 
   return (
@@ -51,7 +54,7 @@ export default function EventLog({ events }: EventLogProps) {
         <span className="text-gold text-xs font-semibold uppercase tracking-widest">Event Log</span>
         <span className="ml-auto text-xs text-cream/30">{events.length} events</span>
       </div>
-      <div className="flex-1 overflow-y-auto scroll-thin px-3 py-2 space-y-0.5">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto scroll-thin px-3 py-2 space-y-0.5">
         {events.length === 0 && (
           <p className="text-cream/30 text-xs italic">No events yet…</p>
         )}
@@ -64,7 +67,6 @@ export default function EventLog({ events }: EventLogProps) {
             <span className={`${TYPE_COLORS[ev.type]} break-words`}>{ev.message}</span>
           </div>
         ))}
-        <div ref={bottomRef} />
       </div>
     </div>
   );
