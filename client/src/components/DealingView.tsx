@@ -244,17 +244,15 @@ export default function DealingView({ gameState, onDealCard, onFinishDealing }: 
           </div>
         )}
 
+        {/* ── Player's hand ────────────────────────────────────────────────── */}
+        {gameState.myHand.length > 0 && (
+          <PlayerHand hand={gameState.myHand} label="Your hand (so far)" />
+        )}
+
         {/* ── Event log ─────────────────────────────────────────────────────── */}
         <EventLog events={gameState.eventLog} />
 
       </div>
-
-      {/* ── Player's hand ────────────────────────────────────────────────── */}
-      {gameState.myHand.length > 0 && (
-        <div className="w-full max-w-3xl mt-4">
-          <PlayerHand hand={gameState.myHand} label="Your hand (so far)" />
-        </div>
-      )}
     </div>
   );
 }

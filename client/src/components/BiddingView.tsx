@@ -291,15 +291,13 @@ export default function BiddingView({ gameState, onPlaceBid }: BiddingViewProps)
           </div>
         )}
 
+        {/* Hand */}
+        {gameState.myHand.length > 0 && (
+          <PlayerHand hand={gameState.myHand} />
+        )}
+
         <EventLog events={gameState.eventLog} />
       </div>
-
-      {/* Hand */}
-      {gameState.myHand.length > 0 && (
-        <div className="w-full max-w-3xl mt-4">
-          <PlayerHand hand={gameState.myHand} />
-        </div>
-      )}
     </div>
   );
 }
