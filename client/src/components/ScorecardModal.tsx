@@ -68,9 +68,6 @@ export default function ScorecardModal({ gameState, onClose }: ScorecardModalPro
                     <span className="text-cream/20 text-xs block">tricks/bid</span>
                   </th>
                 ))}
-                <th className="text-center pb-3 px-2 font-normal min-w-[60px]">
-                  <span className="text-xs text-cream/40 uppercase tracking-widest">Total</span>
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -140,16 +137,6 @@ export default function ScorecardModal({ gameState, onClose }: ScorecardModalPro
                       );
                     })}
 
-                    {/* Row total (cumulative after this round) */}
-                    <td className="py-2 px-2 text-center">
-                      {isPast && (
-                        <span className="text-cream/50 font-mono text-xs">
-                          {Math.max(...players.map(p =>
-                            scoreHistory[p.id]?.find(e => e.round === roundNum)?.cumulativeScore ?? 0
-                          ))}
-                        </span>
-                      )}
-                    </td>
                   </tr>
                 );
               })}
@@ -168,7 +155,6 @@ export default function ScorecardModal({ gameState, onClose }: ScorecardModalPro
                     </span>
                   </td>
                 ))}
-                <td />
               </tr>
             </tfoot>
           </table>
