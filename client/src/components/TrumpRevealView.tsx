@@ -4,21 +4,44 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClientGameState } from '@louie/shared';
 import { PlayingCard, FaceDownCard } from './PlayingCard';
-import { SUIT_SYMBOL, SUIT_COLOR } from '@/lib/cardUtils';
+import { SUIT_SYMBOL, SUIT_COLOR, SortPrefs, DEFAULT_SORT_PREFS } from '@/lib/cardUtils';
 import PlayerHand from './PlayerHand';
-import EventLog from './EventLog';
+import SortModal from './SortModal';
 
 interface TrumpRevealViewProps {
   gameState: ClientGameState;
   onFlipTrump: () => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
+function getSortKey(gameId: string, playerId: string) {
+  return `louie_sort_${gameId}_${playerId}`;
+}
+
 export default function TrumpRevealView({ gameState, onFlipTrump }: TrumpRevealViewProps) {
   const round = gameState.round!;
   const dealer = gameState.players[gameState.dealerIndex];
   const isDealer = gameState.myPlayerId === dealer?.id;
+  const isSpectator = !gameState.myPlayerId || gameState.myPlayerId === '';
   const [flipping, setFlipping] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [sortPrefs, setSortPrefs] = useState<SortPrefs>(() => {
+    if (typeof window === 'undefined') return DEFAULT_SORT_PREFS;
+    try {
+      const raw = localStorage.getItem(getSortKey(gameState.gameId, gameState.myPlayerId));
+      return raw ? (JSON.parse(raw) as SortPrefs) : DEFAULT_SORT_PREFS;
+    } catch {
+      return DEFAULT_SORT_PREFS;
+    }
+  });
+  const [sortModalOpen, setSortModalOpen] = useState(false);
+
+  const handleSortChange = useCallback((prefs: SortPrefs) => {
+    setSortPrefs(prefs);
+    try {
+      localStorage.setItem(getSortKey(gameState.gameId, gameState.myPlayerId), JSON.stringify(prefs));
+    } catch {}
+  }, [gameState.gameId, gameState.myPlayerId]);
 
   const handleFlip = useCallback(async () => {
     setFlipping(true);
@@ -30,6 +53,17 @@ export default function TrumpRevealView({ gameState, onFlipTrump }: TrumpRevealV
 
   return (
     <div className="felt-bg min-h-screen flex flex-col items-center py-6 px-4">
+
+      {/* Sort modal */}
+      <AnimatePresence>
+        {sortModalOpen && (
+          <SortModal
+            prefs={sortPrefs}
+            onChange={handleSortChange}
+            onClose={() => setSortModalOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Header */}
       <div className="mb-5 text-center">
@@ -134,15 +168,16 @@ export default function TrumpRevealView({ gameState, onFlipTrump }: TrumpRevealV
           </div>
         )}
 
-        <EventLog events={gameState.eventLog} />
-      </div>
+        {/* Hand */}
+        {gameState.myHand.length > 0 && (
+          <PlayerHand
+            hand={gameState.myHand}
+            sortPrefs={sortPrefs}
+            onSortClick={!isSpectator ? () => setSortModalOpen(true) : undefined}
+          />
+        )}
 
-      {/* Hand */}
-      {gameState.myHand.length > 0 && (
-        <div className="w-full max-w-3xl mt-4">
-          <PlayerHand hand={gameState.myHand} />
-        </div>
-      )}
+      </div>
     </div>
   );
 }
