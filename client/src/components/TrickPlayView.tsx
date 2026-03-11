@@ -141,7 +141,7 @@ export default function TrickPlayView({ gameState, onPlayCard }: TrickPlayViewPr
             )}
             {gameState.paused && <span className="badge badge-red">⏸ Paused</span>}
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 min-h-[120px] items-start content-start">
             {gameState.players.map(player => {
               const bid = round.bids[player.id]?.bid ?? 0;
               const tricks = round.tricksWon[player.id] ?? 0;
@@ -152,10 +152,10 @@ export default function TrickPlayView({ gameState, onPlayCard }: TrickPlayViewPr
               return (
                 <div
                   key={player.id}
-                  className={`seat-card occupied flex flex-col items-center gap-1 p-3 min-w-[80px] min-h-[110px]
+                  className={`seat-card occupied flex flex-col items-center gap-1 p-3 min-w-[100px] min-h-[110px]
                     ${isLeading ? 'border-pulse' : ''}`}
                 >
-                  <span className="text-xs text-cream/50 truncate max-w-[72px]">{player.name}</span>
+                  <span className="text-xs text-cream/50 text-center">{player.name}</span>
                   <span
                     className="text-lg font-bold font-mono"
                     style={{ color: hitBid ? '#fbbf24' : '#f5f0e8' }}
@@ -180,7 +180,7 @@ export default function TrickPlayView({ gameState, onPlayCard }: TrickPlayViewPr
         </div>
 
         {/* ── Trick table ──────────────────────────────────────────────────── */}
-        <div className="panel px-5 py-5">
+        <div className="panel px-5 py-5 min-h-[220px]">
           <p className="text-xs text-cream/40 uppercase tracking-widest mb-3">
             {round.currentTrick.plays.length === 0 ? 'Trick table' : `Trick ${trickNumber}`}
           </p>
@@ -223,7 +223,7 @@ export default function TrickPlayView({ gameState, onPlayCard }: TrickPlayViewPr
                       }`}
                     >
                       <PlayingCard card={play.card} size="md" />
-                      <span className="text-xs text-cream/60 max-w-[64px] text-center truncate">
+                      <span className="text-xs text-cream/60 text-center">
                         {play.playerName}
                         {play.playerId === myPlayerId && <span className="text-cream/30"> (you)</span>}
                       </span>
@@ -251,6 +251,26 @@ export default function TrickPlayView({ gameState, onPlayCard }: TrickPlayViewPr
             </p>
           )}
         </div>
+
+        {/* Paused */}
+        {gameState.paused && (
+          <div className="panel px-4 py-3 border-red-400/40 bg-red-900/20 flex items-center gap-2">
+            <span className="text-red-400">⏸</span>
+            <span className="text-red-300 text-sm">Game paused — waiting for a player to reconnect…</span>
+          </div>
+        )}
+
+        {/* Hand */}
+        {gameState.myHand.length > 0 && (
+          <PlayerHand
+            hand={gameState.myHand}
+            onPlayCard={isMyTurn ? handleCardClick : undefined}
+            playableIds={playableIds}
+            selectedCardId={selectedCardId ?? undefined}
+            sortPrefs={sortPrefs}
+            onSortClick={!isSpectator ? () => setSortModalOpen(true) : undefined}
+          />
+        )}
 
         {/* ── My turn controls ─────────────────────────────────────────────── */}
         {isMyTurn && !isSpectator && (
@@ -307,25 +327,6 @@ export default function TrickPlayView({ gameState, onPlayCard }: TrickPlayViewPr
           </div>
         )}
 
-        {/* Paused */}
-        {gameState.paused && (
-          <div className="panel px-4 py-3 border-red-400/40 bg-red-900/20 flex items-center gap-2">
-            <span className="text-red-400">⏸</span>
-            <span className="text-red-300 text-sm">Game paused — waiting for a player to reconnect…</span>
-          </div>
-        )}
-
-        {/* Hand */}
-        {gameState.myHand.length > 0 && (
-          <PlayerHand
-            hand={gameState.myHand}
-            onPlayCard={isMyTurn ? handleCardClick : undefined}
-            playableIds={playableIds}
-            selectedCardId={selectedCardId ?? undefined}
-            sortPrefs={sortPrefs}
-            onSortClick={!isSpectator ? () => setSortModalOpen(true) : undefined}
-          />
-        )}
       </div>
     </div>
   );

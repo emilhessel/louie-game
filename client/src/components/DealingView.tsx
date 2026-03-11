@@ -152,7 +152,7 @@ export default function DealingView({ gameState, onDealCard, onFinishDealing }: 
                   disabled={!clickable}
                   whileHover={clickable ? { scale: 1.05, y: -3 } : {}}
                   whileTap={clickable ? { scale: 0.96 } : {}}
-                  className={`seat-card occupied flex flex-col items-center gap-1 p-3 min-w-[96px] transition-colors
+                  className={`seat-card occupied flex flex-col items-center gap-1 p-3 min-w-[100px] transition-colors
                     ${done ? 'border-emerald-500/50' : ''}
                     ${isMe ? 'self' : ''}
                     ${clickable ? 'cursor-pointer' : 'cursor-default'}`}

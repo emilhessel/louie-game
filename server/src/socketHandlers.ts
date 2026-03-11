@@ -63,13 +63,13 @@ function startBidCountdown(io: IO, gameId: string): void {
       revealBids(gameId);
       broadcastGameState(io, gameId);
 
-      // After 2s, advance to trick play
+      // After 5s, advance to trick play
       setTimeout(() => {
         const g2 = getGame(gameId);
         if (!g2 || g2.bidCountdownVersion !== myVersion) return;
         advanceToTrickPlay(gameId);
         broadcastGameState(io, gameId);
-      }, 2000);
+      }, 5000);
     }
   }
 
@@ -219,11 +219,11 @@ export function registerSocketHandlers(io: IO, socket: Sock): void {
     broadcastGameState(io, gameId);
     callback({ ok: true });
 
-    // Clear the "wants to change bid" message after 2.5s
+    // Clear the "wants to change bid" message after 4s
     setTimeout(() => {
       clearBidCancelMessage(gameId);
       broadcastGameState(io, gameId);
-    }, 2500);
+    }, 4000);
   });
 
   // ── Play a card ─────────────────────────────────────────────────────────
@@ -238,7 +238,7 @@ export function registerSocketHandlers(io: IO, socket: Sock): void {
     callback({ ok: true });
 
     if (result.trickComplete) {
-      // Pause 3s so clients can see the completed trick, winner, and cards
+      // Pause 6s so clients can see the completed trick, winner, and cards
       setTimeout(() => {
         sweepTrick(gameId);
 
@@ -257,7 +257,7 @@ export function registerSocketHandlers(io: IO, socket: Sock): void {
         } else {
           broadcastGameState(io, gameId); // phase = trick_play, fresh trick
         }
-      }, 3000);
+      }, 6000);
     }
   });
 

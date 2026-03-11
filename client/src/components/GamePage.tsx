@@ -264,15 +264,15 @@ export default function GamePage({ gameId }: GamePageProps) {
       {gameState.videoLink && (
         <button
           onClick={copyVideoLink}
-          className="btn-secondary px-3 py-1.5 text-xs shadow-lg"
+          className="btn-secondary w-36 py-2 text-sm text-center shadow-lg"
         >
-          {copiedVideo ? '✓ Copied!' : '📹 Video'}
+          {copiedVideo ? '✓ Copied!' : '📹 Video Link'}
         </button>
       )}
       {showLastTrick && (
         <button
           onClick={() => { setLastTrickOpen(true); setLastTrickFlash(false); }}
-          className={`btn-secondary px-4 py-2 text-sm shadow-lg transition-all ${
+          className={`btn-secondary w-36 py-2 text-sm text-center shadow-lg transition-all ${
             lastTrickFlash ? 'border-gold/80 shadow-[0_0_12px_rgba(201,168,76,0.5)]' : ''
           }`}
         >
@@ -281,7 +281,7 @@ export default function GamePage({ gameId }: GamePageProps) {
       )}
       <button
         onClick={() => setScorecardOpen(true)}
-        className="btn-secondary px-4 py-2 text-sm shadow-lg"
+        className="btn-secondary w-36 py-2 text-sm text-center shadow-lg"
       >
         📊 Scores
       </button>

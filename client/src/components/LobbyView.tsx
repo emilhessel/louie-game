@@ -161,20 +161,23 @@ export default function LobbyView({ gameState, onStartGame }: LobbyViewProps) {
               <button
                 onClick={handleStart}
                 disabled={!canStart || starting}
-                className={`btn-primary text-base px-8 py-3 ${canStart && !starting ? 'shimmer-glow' : ''}`}
+                className={`btn-primary text-lg px-10 py-4 ${canStart && !starting ? 'shimmer-glow' : ''}`}
               >
                 {starting ? 'Starting…' : '▶ Start Game'}
               </button>
               {!canStart && (
-                <p className="text-xs text-cream/40">
+                <p className="text-sm text-cream/50">
                   Need at least 2 players to start
                 </p>
               )}
             </>
           ) : (
-            <p className="text-sm text-cream/40 italic">
-              Waiting for the host to start the game…
-            </p>
+            <div className="panel px-6 py-4 text-center border-cream/20 w-full max-w-xs">
+              <p className="text-cream/80 text-base font-medium">
+                Waiting for the host to start…
+              </p>
+              <p className="text-cream/40 text-sm mt-1">Sit tight!</p>
+            </div>
           )}
         </div>
 

@@ -4,13 +4,18 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClientGameState } from '@louie/shared';
 import { PlayingCard } from './PlayingCard';
-import { SUIT_SYMBOL, SUIT_COLOR } from '@/lib/cardUtils';
+import { SUIT_SYMBOL, SUIT_COLOR, SortPrefs, DEFAULT_SORT_PREFS } from '@/lib/cardUtils';
 import PlayerHand from './PlayerHand';
+import SortModal from './SortModal';
 
 interface BiddingViewProps {
   gameState: ClientGameState;
   onPlaceBid: (bid: number) => Promise<{ ok: true } | { ok: false; error: string }>;
   onCancelBidCountdown: () => Promise<{ ok: true } | { ok: false; error: string }>;
+}
+
+function getSortKey(gameId: string, playerId: string) {
+  return `louie_sort_${gameId}_${playerId}`;
 }
 
 export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdown }: BiddingViewProps) {
@@ -23,6 +28,25 @@ export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdow
   const [locking, setLocking] = useState(false);
   const [bidError, setBidError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
+
+  // Sort prefs
+  const [sortPrefs, setSortPrefs] = useState<SortPrefs>(() => {
+    if (typeof window === 'undefined') return DEFAULT_SORT_PREFS;
+    try {
+      const raw = localStorage.getItem(getSortKey(gameState.gameId, gameState.myPlayerId));
+      return raw ? (JSON.parse(raw) as SortPrefs) : DEFAULT_SORT_PREFS;
+    } catch {
+      return DEFAULT_SORT_PREFS;
+    }
+  });
+  const [sortModalOpen, setSortModalOpen] = useState(false);
+
+  const handleSortChange = useCallback((prefs: SortPrefs) => {
+    setSortPrefs(prefs);
+    try {
+      localStorage.setItem(getSortKey(gameState.gameId, gameState.myPlayerId), JSON.stringify(prefs));
+    } catch {}
+  }, [gameState.gameId, gameState.myPlayerId]);
 
   const lockedCount = Object.values(round.bids).filter(b => b.hasBid).length;
   const totalPlayers = gameState.players.length;
@@ -123,7 +147,7 @@ export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdow
                 transition={{ delay: 0.5 }}
                 onClick={handleCancel}
                 disabled={cancelling}
-                className="mt-10 text-cream/50 hover:text-cream/80 text-sm transition-colors underline underline-offset-2 pointer-events-auto"
+                className="mt-10 btn-secondary px-6 py-2 text-sm pointer-events-auto"
               >
                 {cancelling ? '…' : 'Oh shoot — I changed my mind!'}
               </motion.button>
@@ -152,6 +176,17 @@ export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdow
             </motion.p>
             <p className="text-cream/40 text-sm mt-3">Bids unlocked — update your bid…</p>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sort modal */}
+      <AnimatePresence>
+        {sortModalOpen && (
+          <SortModal
+            prefs={sortPrefs}
+            onChange={handleSortChange}
+            onClose={() => setSortModalOpen(false)}
+          />
         )}
       </AnimatePresence>
 
@@ -193,7 +228,7 @@ export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdow
         {/* ── Player bid status grid ──────────────────────────────────────── */}
         <div className="panel px-5 py-4">
           <p className="text-xs text-cream/40 uppercase tracking-widest mb-3">Players · Trick Play Order</p>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 min-h-[140px] items-start content-start">
             {gameState.players.map((player, playerIdx) => {
               const bs = round.bids[player.id];
               const locked = bs?.hasBid ?? false;
@@ -207,10 +242,10 @@ export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdow
                 <motion.div
                   key={player.id}
                   layout
-                  className={`seat-card occupied flex flex-col items-center gap-1 p-3 min-w-[90px]
+                  className={`seat-card occupied flex flex-col items-center gap-1 p-3 min-w-[100px]
                     ${locked ? 'border-emerald-500/50' : ''}`}
                 >
-                  <span className="text-xs text-cream/40 truncate max-w-[80px]">{player.name}</span>
+                  <span className="text-xs text-cream/40 text-center">{player.name}</span>
                   <div className="flex gap-1 flex-wrap justify-center">
                     {isMe && <span className="badge" style={{ background: 'rgba(255,255,255,0.08)', color: '#f5f0e8', border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.6rem' }}>you</span>}
                     <span
@@ -261,6 +296,23 @@ export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdow
             })}
           </div>
         </div>
+
+        {/* Paused */}
+        {gameState.paused && (
+          <div className="panel px-4 py-3 border-red-400/40 bg-red-900/20 flex items-center gap-2">
+            <span className="text-red-400">⏸</span>
+            <span className="text-red-300 text-sm">Game paused — waiting for a player to reconnect…</span>
+          </div>
+        )}
+
+        {/* Hand */}
+        {gameState.myHand.length > 0 && (
+          <PlayerHand
+            hand={gameState.myHand}
+            sortPrefs={sortPrefs}
+            onSortClick={!isSpectator ? () => setSortModalOpen(true) : undefined}
+          />
+        )}
 
         {/* ── Bid input (own player, not yet locked, not revealed) ───────── */}
         {!isSpectator && !hasLocked && !isRevealed && !isCountingDown && (
@@ -356,18 +408,6 @@ export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdow
           </motion.div>
         )}
 
-        {/* Paused */}
-        {gameState.paused && (
-          <div className="panel px-4 py-3 border-red-400/40 bg-red-900/20 flex items-center gap-2">
-            <span className="text-red-400">⏸</span>
-            <span className="text-red-300 text-sm">Game paused — waiting for a player to reconnect…</span>
-          </div>
-        )}
-
-        {/* Hand */}
-        {gameState.myHand.length > 0 && (
-          <PlayerHand hand={gameState.myHand} />
-        )}
       </div>
     </div>
   );

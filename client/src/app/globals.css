@@ -147,11 +147,11 @@ body {
 
 /* Used on the active player's seat card in the scoreboard */
 @keyframes border-pulse {
-  0%, 100% { border-color: rgba(201, 168, 76, 0.55); }
-  50%       { border-color: rgba(201, 168, 76, 1); box-shadow: 0 0 8px rgba(201, 168, 76, 0.45); }
+  0%, 100% { border-color: rgba(201, 168, 76, 0.6); box-shadow: 0 0 0 1px rgba(201,168,76,0.2); }
+  50%       { border-color: rgba(201, 168, 76, 1); box-shadow: 0 0 16px rgba(201, 168, 76, 0.75), 0 0 0 2px rgba(201,168,76,0.45); }
 }
 .border-pulse {
-  animation: border-pulse 1.5s ease-in-out infinite;
+  animation: border-pulse 1.2s ease-in-out infinite;
 }
 
 /* Used on the lobby start button when the game can be started */
