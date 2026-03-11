@@ -5,6 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ClientGameState } from '@louie/shared';
 import { FaceDownCard } from './PlayingCard';
 import PlayerHand from './PlayerHand';
+import SortModal from './SortModal';
+import { SortPrefs, DEFAULT_SORT_PREFS } from '@/lib/cardUtils';
+
+function getSortKey(gameId: string, playerId: string) {
+  return `louie_sort_${gameId}_${playerId}`;
+}
 
 interface DealingViewProps {
   gameState: ClientGameState;
@@ -17,9 +23,28 @@ export default function DealingView({ gameState, onDealCard, onFinishDealing }: 
   const dealer = gameState.players[gameState.dealerIndex];
   const isDealer = gameState.myPlayerId === dealer?.id;
 
+  const isSpectator = !gameState.myPlayerId || gameState.myPlayerId === '';
   const [dealError, setDealError] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [finishError, setFinishError] = useState<string | null>(null);
+
+  const [sortPrefs, setSortPrefs] = useState<SortPrefs>(() => {
+    if (typeof window === 'undefined') return DEFAULT_SORT_PREFS;
+    try {
+      const raw = localStorage.getItem(getSortKey(gameState.gameId, gameState.myPlayerId));
+      return raw ? (JSON.parse(raw) as SortPrefs) : DEFAULT_SORT_PREFS;
+    } catch {
+      return DEFAULT_SORT_PREFS;
+    }
+  });
+  const [sortModalOpen, setSortModalOpen] = useState(false);
+
+  const handleSortChange = useCallback((prefs: SortPrefs) => {
+    setSortPrefs(prefs);
+    try {
+      localStorage.setItem(getSortKey(gameState.gameId, gameState.myPlayerId), JSON.stringify(prefs));
+    } catch {}
+  }, [gameState.gameId, gameState.myPlayerId]);
 
   // Track which player was just dealt to so we can animate their count badge
   const prevCountsRef = useRef<Record<string, number>>({});
@@ -67,6 +92,17 @@ export default function DealingView({ gameState, onDealCard, onFinishDealing }: 
 
   return (
     <div className="felt-bg min-h-screen flex flex-col items-center py-6 px-4">
+
+      {/* Sort modal */}
+      <AnimatePresence>
+        {sortModalOpen && (
+          <SortModal
+            prefs={sortPrefs}
+            onChange={handleSortChange}
+            onClose={() => setSortModalOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── MISDEAL overlay ──────────────────────────────────────────────── */}
       <AnimatePresence>
@@ -245,7 +281,12 @@ export default function DealingView({ gameState, onDealCard, onFinishDealing }: 
 
         {/* ── Player's hand ────────────────────────────────────────────────── */}
         {gameState.myHand.length > 0 && (
-          <PlayerHand hand={gameState.myHand} label="Your hand (so far)" />
+          <PlayerHand
+            hand={gameState.myHand}
+            label="Your hand (so far)"
+            sortPrefs={sortPrefs}
+            onSortClick={!isSpectator ? () => setSortModalOpen(true) : undefined}
+          />
         )}
 
       </div>
