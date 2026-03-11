@@ -141,7 +141,7 @@ export default function TrickPlayView({ gameState, onPlayCard }: TrickPlayViewPr
             )}
             {gameState.paused && <span className="badge badge-red">⏸ Paused</span>}
           </div>
-          <div className="flex flex-wrap gap-3 min-h-[120px] items-start content-start">
+          <div className="flex flex-wrap gap-3">
             {gameState.players.map(player => {
               const bid = round.bids[player.id]?.bid ?? 0;
               const tricks = round.tricksWon[player.id] ?? 0;
@@ -150,24 +150,28 @@ export default function TrickPlayView({ gameState, onPlayCard }: TrickPlayViewPr
               const hitBid = tricks === bid;
 
               return (
-                <div
-                  key={player.id}
-                  className={`seat-card occupied flex flex-col items-center gap-1 p-3 min-w-[100px] min-h-[110px]
-                    ${isLeading ? 'border-pulse' : ''}`}
-                >
-                  <span className="text-xs text-cream/50 text-center">{player.name}</span>
-                  <span
-                    className="text-lg font-bold font-mono"
-                    style={{ color: hitBid ? '#fbbf24' : '#f5f0e8' }}
+                <div key={player.id} className="flex flex-col items-center gap-1">
+                  <div
+                    className={`seat-card occupied flex flex-col items-center p-3 overflow-hidden
+                      ${isLeading ? 'border-pulse' : ''}`}
+                    style={{ width: 108, height: 120 }}
                   >
-                    {tricks}
-                  </span>
-                  <span className="text-xs text-cream/30">bid {bid}</span>
-                  {isLeading && (
-                    <span className="text-gold text-xs">▶ turn</span>
-                  )}
-                  {/* Spacer + "you" badge always at bottom */}
-                  <div className="flex-1" />
+                    {/* Top: player name */}
+                    <span className="text-xs text-cream/50 text-center leading-tight w-full">{player.name}</span>
+                    {/* Middle: tricks + bid */}
+                    <span
+                      className="text-lg font-bold font-mono mt-1"
+                      style={{ color: hitBid ? '#fbbf24' : '#f5f0e8' }}
+                    >
+                      {tricks}
+                    </span>
+                    <span className="text-xs text-cream/30">bid {bid}</span>
+                    {/* Bottom: turn indicator */}
+                    <div className="mt-auto">
+                      {isLeading && <span className="text-gold text-xs">▶ turn</span>}
+                    </div>
+                  </div>
+                  {/* "you" label lives outside the seat box */}
                   {isMe && (
                     <span className="badge" style={{ background: 'rgba(255,255,255,0.08)', color: '#f5f0e8', border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.6rem' }}>
                       you

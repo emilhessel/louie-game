@@ -101,11 +101,11 @@ export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdow
   let revealSubtext = '';
   if (isRevealed) {
     if (totalBid < tricks) {
-      revealSubtext = `It's an under-bid: ${totalBid} bid${totalBid !== 1 ? 's' : ''} for ${tricks} trick${tricks !== 1 ? 's' : ''}`;
+      revealSubtext = `Under-bid: ${totalBid} bid${totalBid !== 1 ? 's' : ''} for ${tricks} trick${tricks !== 1 ? 's' : ''}`;
     } else if (totalBid > tricks) {
-      revealSubtext = `It's an over-bid: ${totalBid} bid${totalBid !== 1 ? 's' : ''} for ${tricks} trick${tricks !== 1 ? 's' : ''}`;
+      revealSubtext = `Over-bid: ${totalBid} bid${totalBid !== 1 ? 's' : ''} for ${tricks} trick${tricks !== 1 ? 's' : ''}`;
     } else {
-      revealSubtext = `It's a freebie — Everyone wins! Unless you screw this up...`;
+      revealSubtext = `Freebie! Everyone wins — unless you screw it up…`;
     }
   }
 
@@ -147,7 +147,7 @@ export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdow
                 transition={{ delay: 0.5 }}
                 onClick={handleCancel}
                 disabled={cancelling}
-                className="mt-10 btn-secondary px-6 py-2 text-sm pointer-events-auto"
+                className="mt-10 btn-primary px-8 py-3 text-base pointer-events-auto"
               >
                 {cancelling ? '…' : 'Oh shoot — I changed my mind!'}
               </motion.button>
@@ -164,17 +164,25 @@ export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdow
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/75 backdrop-blur-sm pointer-events-none"
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-none"
           >
             <motion.p
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="text-cream text-xl font-semibold text-center px-8"
-              style={{ fontFamily: 'var(--font-playfair)' }}
+              className="text-gold text-4xl font-bold text-center px-8"
+              style={{ fontFamily: 'var(--font-playfair)', textShadow: '0 0 24px rgba(201,168,76,0.7)' }}
             >
-              {round.bidCancelledBy} wants to change their bid
+              {round.bidCancelledBy}
             </motion.p>
-            <p className="text-cream/40 text-sm mt-3">Bids unlocked — update your bid…</p>
+            <motion.p
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-cream text-xl font-semibold mt-3"
+            >
+              wants to change their bid!
+            </motion.p>
+            <p className="text-cream/60 text-base mt-3">Bids unlocked — update your bid…</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -228,7 +236,7 @@ export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdow
         {/* ── Player bid status grid ──────────────────────────────────────── */}
         <div className="panel px-5 py-4">
           <p className="text-xs text-cream/40 uppercase tracking-widest mb-3">Players · Trick Play Order</p>
-          <div className="flex flex-wrap gap-3 min-h-[140px] items-start content-start">
+          <div className="flex flex-wrap gap-3">
             {gameState.players.map((player, playerIdx) => {
               const bs = round.bids[player.id];
               const locked = bs?.hasBid ?? false;
@@ -239,43 +247,44 @@ export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdow
               const isFirstToPlay = trickOrder === 1;
 
               return (
-                <motion.div
-                  key={player.id}
-                  layout
-                  className={`seat-card occupied flex flex-col items-center gap-1 p-3 min-w-[100px]
-                    ${locked ? 'border-emerald-500/50' : ''}`}
-                >
-                  <span className="text-xs text-cream/40 text-center">{player.name}</span>
-                  <div className="flex gap-1 flex-wrap justify-center">
-                    {isMe && <span className="badge" style={{ background: 'rgba(255,255,255,0.08)', color: '#f5f0e8', border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.6rem' }}>you</span>}
-                    <span
-                      className="badge"
-                      style={{
-                        background: isFirstToPlay ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.05)',
-                        color: isFirstToPlay ? '#fbbf24' : '#f5f0e888',
-                        border: `1px solid ${isFirstToPlay ? 'rgba(251,191,36,0.4)' : 'rgba(255,255,255,0.1)'}`,
-                        fontSize: '0.6rem',
-                      }}
-                    >
-                      {trickOrder === 1 ? '▶ leads' : `${trickOrder}${trickOrder === 2 ? 'nd' : trickOrder === 3 ? 'rd' : 'th'}`}
-                    </span>
-                  </div>
-
-                  {isRevealed ? (
-                    <motion.div
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                      className="text-center"
-                    >
-                      <span className="text-3xl font-bold text-gold font-mono">
-                        {bs?.bid ?? '?'}
+                <div key={player.id} className="flex flex-col items-center gap-1">
+                  <motion.div
+                    layout
+                    className={`seat-card occupied flex flex-col items-center p-3 overflow-hidden
+                      ${locked ? 'border-emerald-500/50' : ''}`}
+                    style={{ width: 108, height: 150 }}
+                  >
+                    {/* Top: name + trick-order badge */}
+                    <div className="flex flex-col items-center gap-1 w-full">
+                      <span className="text-xs text-cream/40 text-center leading-tight w-full">{player.name}</span>
+                      <span
+                        className="badge"
+                        style={{
+                          background: isFirstToPlay ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.05)',
+                          color: isFirstToPlay ? '#fbbf24' : '#f5f0e888',
+                          border: `1px solid ${isFirstToPlay ? 'rgba(251,191,36,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                          fontSize: '0.6rem',
+                        }}
+                      >
+                        {trickOrder === 1 ? '▶ leads' : `${trickOrder}${trickOrder === 2 ? 'nd' : trickOrder === 3 ? 'rd' : 'th'}`}
                       </span>
-                      <p className="text-xs text-cream/30">bid</p>
-                    </motion.div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-1 mt-1">
-                      {locked ? (
+                    </div>
+
+                    {/* Bottom: bid status */}
+                    <div className="mt-auto flex flex-col items-center gap-0.5">
+                      {isRevealed ? (
+                        <motion.div
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                          className="text-center"
+                        >
+                          <span className="text-3xl font-bold text-gold font-mono">
+                            {bs?.bid ?? '?'}
+                          </span>
+                          <p className="text-xs text-cream/30">bid</p>
+                        </motion.div>
+                      ) : locked ? (
                         <>
                           <span className="text-emerald-400 text-lg">✓</span>
                           <span className="text-xs text-emerald-400/70">locked</span>
@@ -290,8 +299,15 @@ export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdow
                         </>
                       )}
                     </div>
+                  </motion.div>
+
+                  {/* "you" label lives outside the seat box */}
+                  {isMe && (
+                    <span className="badge" style={{ background: 'rgba(255,255,255,0.08)', color: '#f5f0e8', border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.6rem' }}>
+                      you
+                    </span>
                   )}
-                </motion.div>
+                </div>
               );
             })}
           </div>
@@ -400,11 +416,13 @@ export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdow
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="panel px-5 py-4 text-center border-gold/40"
+            className="panel px-5 py-6 text-center border-gold/50 attention-glow"
           >
-            <p className="text-gold font-semibold text-lg">Bids revealed!</p>
-            <p className="text-cream/70 text-sm mt-1">{revealSubtext}</p>
-            <p className="text-cream/40 text-xs mt-2">Trick play begins shortly…</p>
+            <p className="text-gold font-bold text-2xl" style={{ fontFamily: 'var(--font-playfair)' }}>
+              Bids revealed!
+            </p>
+            <p className="text-cream text-lg font-semibold mt-2">{revealSubtext}</p>
+            <p className="text-cream/40 text-sm mt-3">Trick play begins shortly…</p>
           </motion.div>
         )}
 
