@@ -113,6 +113,8 @@ export interface RoundState {
   lastDealTargetId?: string;
   /** 3 → 2 → 1 during bid countdown; undefined otherwise */
   bidCountdown?: number;
+  /** Set briefly when a player cancels the bid countdown */
+  bidCancelledBy?: string;
   /** Player IDs who have clicked "Ready for next round" */
   playersReady?: string[];
 }
@@ -147,6 +149,8 @@ export interface GameState {
   eventLog: GameEvent[];
   createdAt: number;
   paused: boolean;        // true when a player is disconnected mid-game
+  /** Optional video-conference link set at game creation */
+  videoLink?: string;
 }
 
 // ─────────────────────────────────────────────
@@ -196,6 +200,10 @@ export interface ClientToServerEvents {
     data: { gameId: string; cardId: string },
     callback: (res: { ok: true } | { ok: false; error: string }) => void,
   ) => void;
+  cancel_bid_countdown: (
+    data: { gameId: string },
+    callback: (res: { ok: true } | { ok: false; error: string }) => void,
+  ) => void;
   ready_next_round: (
     data: { gameId: string },
     callback: (res: { ok: true } | { ok: false; error: string }) => void,
@@ -216,6 +224,7 @@ export interface SocketData {
 
 export interface CreateGameRequest {
   playerName: string;
+  videoLink?: string;
 }
 export interface CreateGameResponse {
   ok: true;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, FormEvent } from 'react';
+import React, { useEffect, useRef, useState, useCallback, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
 import { LouieSession, ClientGameState } from '@louie/shared';
@@ -13,6 +13,7 @@ import TrickPlayView from './TrickPlayView';
 import RoundCompleteView from './RoundCompleteView';
 import GameOverView from './GameOverView';
 import ScorecardModal from './ScorecardModal';
+import LastTrickModal from './LastTrickModal';
 
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3001';
 
@@ -24,11 +25,27 @@ type JoinStatus = 'loading' | 'needs_name' | 'joining' | 'connected' | 'error';
 
 export default function GamePage({ gameId }: GamePageProps) {
   const router = useRouter();
-  const { gameState, connected, error: socketError, tryRejoin, startGame, dealCard, finishDealing, flipTrump, placeBid, playCard, readyNextRound } = useGameState();
+  const { gameState, connected, error: socketError, tryRejoin, startGame, dealCard, finishDealing, flipTrump, placeBid, playCard, cancelBidCountdown, readyNextRound } = useGameState();
 
   const [status, setStatus] = useState<JoinStatus>('loading');
   const [pageError, setPageError] = useState<string | null>(null);
   const [scorecardOpen, setScorecardOpen] = useState(false);
+  const [lastTrickOpen, setLastTrickOpen] = useState(false);
+  const [lastTrickFlash, setLastTrickFlash] = useState(false);
+  const [copiedVideo, setCopiedVideo] = useState(false);
+
+  // Track completed tricks count to flash the Last Trick button
+  const prevCompletedTricksRef = useRef(0);
+  useEffect(() => {
+    const count = gameState?.round?.completedTricks.length ?? 0;
+    if (count > prevCompletedTricksRef.current) {
+      setLastTrickFlash(true);
+      const t = setTimeout(() => setLastTrickFlash(false), 2000);
+      prevCompletedTricksRef.current = count;
+      return () => clearTimeout(t);
+    }
+    prevCompletedTricksRef.current = count;
+  }, [gameState?.round?.completedTricks.length]);
 
   // Name modal state (for fresh visitors)
   const [nameInput, setNameInput] = useState('');
@@ -40,19 +57,16 @@ export default function GamePage({ gameId }: GamePageProps) {
   useEffect(() => {
     const session = loadSession();
     if (session && session.gameId === gameId) {
-      // Attempt auto-rejoin
       setStatus('loading');
       tryRejoin(session).then(ok => {
         if (ok) {
           setStatus('connected');
         } else {
-          // Session is stale — ask for name
           clearSession();
           setStatus('needs_name');
         }
       });
     } else {
-      // No session for this game — ask for name
       setStatus('needs_name');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -112,39 +126,23 @@ export default function GamePage({ gameId }: GamePageProps) {
     [nameInput, gameId, tryRejoin],
   );
 
-  const handleStartGame = useCallback(async () => {
-    return startGame(gameId);
-  }, [startGame, gameId]);
+  const handleStartGame = useCallback(async () => startGame(gameId), [startGame, gameId]);
+  const handleDealCard = useCallback((targetPlayerId: string) => dealCard(gameId, targetPlayerId), [dealCard, gameId]);
+  const handleFinishDealing = useCallback(() => finishDealing(gameId), [finishDealing, gameId]);
+  const handleFlipTrump = useCallback(() => flipTrump(gameId), [flipTrump, gameId]);
+  const handlePlaceBid = useCallback((bid: number) => placeBid(gameId, bid), [placeBid, gameId]);
+  const handlePlayCard = useCallback((cardId: string) => playCard(gameId, cardId), [playCard, gameId]);
+  const handleCancelBidCountdown = useCallback(() => cancelBidCountdown(gameId), [cancelBidCountdown, gameId]);
+  const handleReadyNextRound = useCallback(() => readyNextRound(gameId), [readyNextRound, gameId]);
 
-  const handleDealCard = useCallback(
-    (targetPlayerId: string) => dealCard(gameId, targetPlayerId),
-    [dealCard, gameId],
-  );
-
-  const handleFinishDealing = useCallback(
-    () => finishDealing(gameId),
-    [finishDealing, gameId],
-  );
-
-  const handleFlipTrump = useCallback(
-    () => flipTrump(gameId),
-    [flipTrump, gameId],
-  );
-
-  const handlePlaceBid = useCallback(
-    (bid: number) => placeBid(gameId, bid),
-    [placeBid, gameId],
-  );
-
-  const handlePlayCard = useCallback(
-    (cardId: string) => playCard(gameId, cardId),
-    [playCard, gameId],
-  );
-
-  const handleReadyNextRound = useCallback(
-    () => readyNextRound(gameId),
-    [readyNextRound, gameId],
-  );
+  const copyVideoLink = useCallback(async () => {
+    if (!gameState?.videoLink) return;
+    try {
+      await navigator.clipboard.writeText(gameState.videoLink);
+      setCopiedVideo(true);
+      setTimeout(() => setCopiedVideo(false), 2000);
+    } catch {}
+  }, [gameState?.videoLink]);
 
   // ── Render: loading ───────────────────────────────────────────────────────
   if (status === 'loading' || status === 'joining') {
@@ -250,22 +248,44 @@ export default function GamePage({ gameId }: GamePageProps) {
     );
   }
 
-  // Connection status overlay (disconnected from WS but still have last state)
   const wsWarning = !connected && (
     <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-900/80 text-yellow-200 text-xs text-center py-1.5 px-4 backdrop-blur-sm">
       ⚡ Reconnecting to server…
     </div>
   );
 
-  // Scorecard button — visible during all active (non-lobby) phases
-  const showScoreButton = gameState.phase !== 'lobby' && gameState.currentRound > 0;
-  const scoreButton = showScoreButton && (
-    <button
-      onClick={() => setScorecardOpen(true)}
-      className="fixed bottom-5 right-5 z-40 btn-secondary px-4 py-2 text-sm shadow-lg"
-    >
-      📊 Scores
-    </button>
+  const showActivePhase = gameState.phase !== 'lobby' && gameState.currentRound > 0;
+  const showLastTrick = gameState.phase === 'trick_play' && (gameState.round?.completedTricks.length ?? 0) > 0;
+  const lastTrick = gameState.round?.completedTricks[gameState.round.completedTricks.length - 1];
+
+  // Fixed button cluster (bottom-right)
+  const fixedButtons = showActivePhase && (
+    <div className="fixed bottom-5 right-5 z-40 flex flex-col gap-2 items-end">
+      {gameState.videoLink && (
+        <button
+          onClick={copyVideoLink}
+          className="btn-secondary px-3 py-1.5 text-xs shadow-lg"
+        >
+          {copiedVideo ? '✓ Copied!' : '📹 Video'}
+        </button>
+      )}
+      {showLastTrick && (
+        <button
+          onClick={() => { setLastTrickOpen(true); setLastTrickFlash(false); }}
+          className={`btn-secondary px-4 py-2 text-sm shadow-lg transition-all ${
+            lastTrickFlash ? 'border-gold/80 shadow-[0_0_12px_rgba(201,168,76,0.5)]' : ''
+          }`}
+        >
+          🎴 Last Trick
+        </button>
+      )}
+      <button
+        onClick={() => setScorecardOpen(true)}
+        className="btn-secondary px-4 py-2 text-sm shadow-lg"
+      >
+        📊 Scores
+      </button>
+    </div>
   );
 
   let phaseView: React.ReactNode;
@@ -286,7 +306,13 @@ export default function GamePage({ gameId }: GamePageProps) {
       phaseView = <TrumpRevealView gameState={gameState} onFlipTrump={handleFlipTrump} />;
       break;
     case 'bidding':
-      phaseView = <BiddingView gameState={gameState} onPlaceBid={handlePlaceBid} />;
+      phaseView = (
+        <BiddingView
+          gameState={gameState}
+          onPlaceBid={handlePlaceBid}
+          onCancelBidCountdown={handleCancelBidCountdown}
+        />
+      );
       break;
     case 'trick_play':
       phaseView = <TrickPlayView gameState={gameState} onPlayCard={handlePlayCard} />;
@@ -305,10 +331,13 @@ export default function GamePage({ gameId }: GamePageProps) {
     <>
       {wsWarning}
       {phaseView}
-      {scoreButton}
+      {fixedButtons}
       <AnimatePresence>
         {scorecardOpen && (
           <ScorecardModal gameState={gameState} onClose={() => setScorecardOpen(false)} />
+        )}
+        {lastTrickOpen && lastTrick && (
+          <LastTrickModal trick={lastTrick} onClose={() => setLastTrickOpen(false)} />
         )}
       </AnimatePresence>
     </>
@@ -340,23 +369,6 @@ function PlaceholderPhaseView({
             Round {gameState.currentRound} · Dealer: <strong className="text-gold">{dealer.name}</strong>
           </p>
         )}
-        <p className="text-cream/30 text-xs mt-4 italic">
-          This phase will be built in the next milestone.
-        </p>
-      </div>
-      <div className="panel px-5 py-3 w-full max-w-md">
-        <p className="text-xs text-cream/40 uppercase tracking-widest mb-2">Players</p>
-        <div className="flex flex-wrap gap-2">
-          {gameState.players.map(p => (
-            <span key={p.id} className="text-sm text-cream/70 flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${p.connected ? 'bg-emerald-400' : 'bg-red-400'}`} />
-              {p.name}
-              {p.id === gameState.myPlayerId && (
-                <span className="text-xs text-cream/30">(you)</span>
-              )}
-            </span>
-          ))}
-        </div>
       </div>
     </div>
   );

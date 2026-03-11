@@ -134,6 +134,35 @@ body {
   box-shadow: 0 0 0 2px rgba(201,168,76,0.15);
 }
 
+/* ── Attention animations ──────────────────────────────────────────── */
+
+/* Used when waiting on a player (turn prompt, bid panel, deal prompt) */
+@keyframes attention-glow {
+  0%, 100% { border-color: rgba(201, 168, 76, 0.3); box-shadow: none; }
+  50%       { border-color: rgba(201, 168, 76, 0.85); box-shadow: 0 0 14px rgba(201, 168, 76, 0.35); }
+}
+.attention-glow {
+  animation: attention-glow 1.4s ease-in-out infinite;
+}
+
+/* Used on the active player's seat card in the scoreboard */
+@keyframes border-pulse {
+  0%, 100% { border-color: rgba(201, 168, 76, 0.55); }
+  50%       { border-color: rgba(201, 168, 76, 1); box-shadow: 0 0 8px rgba(201, 168, 76, 0.45); }
+}
+.border-pulse {
+  animation: border-pulse 1.5s ease-in-out infinite;
+}
+
+/* Used on the lobby start button when the game can be started */
+@keyframes shimmer-glow {
+  0%, 100% { box-shadow: 0 4px 12px rgba(201,168,76,0.3); }
+  50%       { box-shadow: 0 4px 20px rgba(201,168,76,0.75), 0 0 0 3px rgba(201,168,76,0.25); }
+}
+.shimmer-glow {
+  animation: shimmer-glow 1.8s ease-in-out infinite;
+}
+
 /* Badge */
 .badge {
   display: inline-flex;

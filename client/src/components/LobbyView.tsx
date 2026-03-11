@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react';
 import { ClientGameState } from '@louie/shared';
 import SeatCard from './SeatCard';
-import EventLog from './EventLog';
 
 interface LobbyViewProps {
   gameState: ClientGameState;
@@ -14,6 +13,7 @@ const MAX_SEATS = 5;
 
 export default function LobbyView({ gameState, onStartGame }: LobbyViewProps) {
   const [copied, setCopied] = useState(false);
+  const [copiedVideo, setCopiedVideo] = useState(false);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
 
@@ -27,10 +27,17 @@ export default function LobbyView({ gameState, onStartGame }: LobbyViewProps) {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback: select text
-    }
+    } catch {}
   }, [shareUrl]);
+
+  const copyVideoLink = useCallback(async () => {
+    if (!gameState.videoLink) return;
+    try {
+      await navigator.clipboard.writeText(gameState.videoLink);
+      setCopiedVideo(true);
+      setTimeout(() => setCopiedVideo(false), 2000);
+    } catch {}
+  }, [gameState.videoLink]);
 
   const handleStart = useCallback(async () => {
     setStarting(true);
@@ -40,7 +47,6 @@ export default function LobbyView({ gameState, onStartGame }: LobbyViewProps) {
     if (!res.ok) setStartError(res.error);
   }, [onStartGame]);
 
-  const myPlayer = gameState.players.find(p => p.id === gameState.myPlayerId);
   const isHost = gameState.myPlayerId === gameState.hostId;
   const canStart = isHost && gameState.players.length >= 2;
 
@@ -70,9 +76,7 @@ export default function LobbyView({ gameState, onStartGame }: LobbyViewProps) {
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex-1">
               <p className="text-xs text-cream/40 uppercase tracking-widest mb-1">Game ID</p>
-              <p
-                className="text-3xl font-bold text-gold tracking-[0.2em] font-mono"
-              >
+              <p className="text-3xl font-bold text-gold tracking-[0.2em] font-mono">
                 {gameState.gameId}
               </p>
             </div>
@@ -80,6 +84,11 @@ export default function LobbyView({ gameState, onStartGame }: LobbyViewProps) {
               <button onClick={copyLink} className="btn-secondary text-sm">
                 {copied ? '✓ Copied!' : '⎘ Copy Invite Link'}
               </button>
+              {gameState.videoLink && (
+                <button onClick={copyVideoLink} className="text-xs text-cream/40 hover:text-cream/70 transition-colors text-right">
+                  {copiedVideo ? '✓ Copied!' : '📹 Copy Video Link'}
+                </button>
+              )}
               <p className="text-xs text-cream/30 font-mono break-all">{shareUrl}</p>
             </div>
           </div>
@@ -142,11 +151,8 @@ export default function LobbyView({ gameState, onStartGame }: LobbyViewProps) {
           </div>
         )}
 
-        {/* Event log */}
-        <EventLog events={gameState.eventLog} />
-
         {/* Start game */}
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-2 pb-4">
           {startError && (
             <p className="text-red-400 text-sm">{startError}</p>
           )}
@@ -155,7 +161,7 @@ export default function LobbyView({ gameState, onStartGame }: LobbyViewProps) {
               <button
                 onClick={handleStart}
                 disabled={!canStart || starting}
-                className="btn-primary text-base px-8 py-3"
+                className={`btn-primary text-base px-8 py-3 ${canStart && !starting ? 'shimmer-glow' : ''}`}
               >
                 {starting ? 'Starting…' : '▶ Start Game'}
               </button>

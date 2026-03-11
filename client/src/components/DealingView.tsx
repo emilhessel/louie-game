@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ClientGameState } from '@louie/shared';
 import { FaceDownCard } from './PlayingCard';
 import PlayerHand from './PlayerHand';
-import EventLog from './EventLog';
 
 interface DealingViewProps {
   gameState: ClientGameState;
@@ -248,9 +247,6 @@ export default function DealingView({ gameState, onDealCard, onFinishDealing }: 
         {gameState.myHand.length > 0 && (
           <PlayerHand hand={gameState.myHand} label="Your hand (so far)" />
         )}
-
-        {/* ── Event log ─────────────────────────────────────────────────────── */}
-        <EventLog events={gameState.eventLog} />
 
       </div>
     </div>

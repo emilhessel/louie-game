@@ -1,32 +1,52 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClientGameState } from '@louie/shared';
 import { PlayingCard } from './PlayingCard';
 import { SUIT_SYMBOL, SUIT_COLOR } from '@/lib/cardUtils';
 import PlayerHand from './PlayerHand';
-import EventLog from './EventLog';
 
 interface BiddingViewProps {
   gameState: ClientGameState;
   onPlaceBid: (bid: number) => Promise<{ ok: true } | { ok: false; error: string }>;
+  onCancelBidCountdown: () => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
-export default function BiddingView({ gameState, onPlaceBid }: BiddingViewProps) {
+export default function BiddingView({ gameState, onPlaceBid, onCancelBidCountdown }: BiddingViewProps) {
   const round = gameState.round!;
   const myBidState = round.bids[gameState.myPlayerId];
   const hasLocked = myBidState?.hasBid ?? false;
   const isSpectator = !gameState.myPlayerId || gameState.myPlayerId === '';
 
-  const [bidValue, setBidValue] = useState(0);
+  const [bidValue, setBidValue] = useState(() => myBidState?.bid ?? 0);
   const [locking, setLocking] = useState(false);
   const [bidError, setBidError] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   const lockedCount = Object.values(round.bids).filter(b => b.hasBid).length;
   const totalPlayers = gameState.players.length;
   const isCountingDown = round.bidCountdown !== undefined;
   const isRevealed = round.bidsRevealed;
+
+  // Keep bid input pre-populated from server state (for after a cancel)
+  useEffect(() => {
+    if (myBidState?.bid !== undefined && !hasLocked) {
+      setBidValue(myBidState.bid);
+    }
+  }, [myBidState?.bid, hasLocked]);
+
+  // Flash bid section after 20s of waiting to lock in
+  const [isIdling, setIsIdling] = useState(false);
+  useEffect(() => {
+    if (hasLocked || isRevealed || isCountingDown || isSpectator) {
+      setIsIdling(false);
+      return;
+    }
+    setIsIdling(false);
+    const t = setTimeout(() => setIsIdling(true), 20_000);
+    return () => clearTimeout(t);
+  }, [hasLocked, isRevealed, isCountingDown, isSpectator]);
 
   const handleLock = useCallback(async () => {
     setLocking(true);
@@ -36,6 +56,12 @@ export default function BiddingView({ gameState, onPlaceBid }: BiddingViewProps)
     if (!res.ok) setBidError(res.error);
   }, [bidValue, onPlaceBid]);
 
+  const handleCancel = useCallback(async () => {
+    setCancelling(true);
+    await onCancelBidCountdown();
+    setCancelling(false);
+  }, [onCancelBidCountdown]);
+
   const adjustBid = useCallback((delta: number) => {
     setBidValue(v => Math.max(0, v + delta));
   }, []);
@@ -44,6 +70,20 @@ export default function BiddingView({ gameState, onPlaceBid }: BiddingViewProps)
   const trumpColor = trumpSuit
     ? (SUIT_COLOR[trumpSuit] === '#1a1a1a' ? '#f5f0e8' : SUIT_COLOR[trumpSuit])
     : '#f5f0e8';
+
+  // Compute bid summary for reveal banner
+  const totalBid = Object.values(round.bids).reduce((sum, b) => sum + (b.bid ?? 0), 0);
+  const tricks = round.handSize;
+  let revealSubtext = '';
+  if (isRevealed) {
+    if (totalBid < tricks) {
+      revealSubtext = `It's an under-bid: ${totalBid} bid${totalBid !== 1 ? 's' : ''} for ${tricks} trick${tricks !== 1 ? 's' : ''}`;
+    } else if (totalBid > tricks) {
+      revealSubtext = `It's an over-bid: ${totalBid} bid${totalBid !== 1 ? 's' : ''} for ${tricks} trick${tricks !== 1 ? 's' : ''}`;
+    } else {
+      revealSubtext = `It's a freebie — Everyone wins! Unless you screw this up...`;
+    }
+  }
 
   return (
     <div className="felt-bg min-h-screen flex flex-col items-center py-6 px-4">
@@ -56,7 +96,7 @@ export default function BiddingView({ gameState, onPlaceBid }: BiddingViewProps)
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/75 backdrop-blur-sm pointer-events-none"
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/75 backdrop-blur-sm"
           >
             <p className="text-cream/50 text-sm uppercase tracking-widest mb-4">All bids locked in!</p>
             <AnimatePresence mode="wait">
@@ -75,6 +115,42 @@ export default function BiddingView({ gameState, onPlaceBid }: BiddingViewProps)
                 </span>
               </motion.div>
             </AnimatePresence>
+            {/* Change-my-mind button — available to all players */}
+            {!isSpectator && (
+              <motion.button
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="mt-10 text-cream/50 hover:text-cream/80 text-sm transition-colors underline underline-offset-2 pointer-events-auto"
+              >
+                {cancelling ? '…' : 'Oh shoot — I changed my mind!'}
+              </motion.button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── "Bid cancelled" overlay ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {!isCountingDown && round.bidCancelledBy && (
+          <motion.div
+            key="cancel-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/75 backdrop-blur-sm pointer-events-none"
+          >
+            <motion.p
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="text-cream text-xl font-semibold text-center px-8"
+              style={{ fontFamily: 'var(--font-playfair)' }}
+            >
+              {round.bidCancelledBy} wants to change their bid
+            </motion.p>
+            <p className="text-cream/40 text-sm mt-3">Bids unlocked — update your bid…</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -123,7 +199,6 @@ export default function BiddingView({ gameState, onPlaceBid }: BiddingViewProps)
               const locked = bs?.hasBid ?? false;
               const isMe = player.id === gameState.myPlayerId;
 
-              // Trick play order: starts with player to left of dealer
               const leaderStartIdx = (gameState.dealerIndex + 1) % gameState.players.length;
               const trickOrder = (playerIdx - leaderStartIdx + gameState.players.length) % gameState.players.length + 1;
               const isFirstToPlay = trickOrder === 1;
@@ -133,7 +208,6 @@ export default function BiddingView({ gameState, onPlaceBid }: BiddingViewProps)
                   key={player.id}
                   layout
                   className={`seat-card occupied flex flex-col items-center gap-1 p-3 min-w-[90px]
-                    ${isMe ? 'self' : ''}
                     ${locked ? 'border-emerald-500/50' : ''}`}
                 >
                   <span className="text-xs text-cream/40 truncate max-w-[80px]">{player.name}</span>
@@ -153,7 +227,6 @@ export default function BiddingView({ gameState, onPlaceBid }: BiddingViewProps)
                   </div>
 
                   {isRevealed ? (
-                    /* Show bid value after reveal */
                     <motion.div
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
@@ -166,13 +239,11 @@ export default function BiddingView({ gameState, onPlaceBid }: BiddingViewProps)
                       <p className="text-xs text-cream/30">bid</p>
                     </motion.div>
                   ) : (
-                    /* Show lock status before reveal */
                     <div className="flex flex-col items-center gap-1 mt-1">
                       {locked ? (
                         <>
                           <span className="text-emerald-400 text-lg">✓</span>
                           <span className="text-xs text-emerald-400/70">locked</span>
-                          {/* Show own bid value immediately */}
                           {isMe && bs?.bid !== undefined && (
                             <span className="text-gold font-mono text-sm font-semibold">{bs.bid}</span>
                           )}
@@ -193,7 +264,7 @@ export default function BiddingView({ gameState, onPlaceBid }: BiddingViewProps)
 
         {/* ── Bid input (own player, not yet locked, not revealed) ───────── */}
         {!isSpectator && !hasLocked && !isRevealed && !isCountingDown && (
-          <div className="panel px-5 py-5">
+          <div className={`panel px-5 py-5 ${isIdling ? 'attention-glow' : ''}`}>
             <p className="text-xs text-cream/40 uppercase tracking-widest mb-4">Your bid</p>
             <div className="flex flex-col items-center gap-4">
               <div className="flex items-center gap-4">
@@ -277,9 +348,11 @@ export default function BiddingView({ gameState, onPlaceBid }: BiddingViewProps)
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="panel px-5 py-3 text-center border-gold/40"
+            className="panel px-5 py-4 text-center border-gold/40"
           >
-            <p className="text-gold font-semibold">Bids revealed! Trick play begins shortly…</p>
+            <p className="text-gold font-semibold text-lg">Bids revealed!</p>
+            <p className="text-cream/70 text-sm mt-1">{revealSubtext}</p>
+            <p className="text-cream/40 text-xs mt-2">Trick play begins shortly…</p>
           </motion.div>
         )}
 
@@ -295,8 +368,6 @@ export default function BiddingView({ gameState, onPlaceBid }: BiddingViewProps)
         {gameState.myHand.length > 0 && (
           <PlayerHand hand={gameState.myHand} />
         )}
-
-        <EventLog events={gameState.eventLog} />
       </div>
     </div>
   );

@@ -27,6 +27,8 @@ export interface ServerGame extends GameState {
   deck: Card[];
   /** Maps socketId → { id, role } for fast disconnect/rejoin lookup */
   socketMap: Record<string, { id: string; role: 'player' | 'spectator' }>;
+  /** Incremented to abort a running bid countdown */
+  bidCountdownVersion: number;
 }
 
 // ─────────────────────────────────────────────
@@ -78,6 +80,7 @@ function makeEvent(message: string, type: GameEvent['type']): GameEvent {
 
 export function createGame(
   playerName: string,
+  videoLink?: string,
 ): { ok: true; gameId: string; playerId: string; game: ServerGame } {
   let gameId: string;
   do { gameId = generateGameId(); } while (games.has(gameId));
@@ -106,9 +109,11 @@ export function createGame(
     eventLog: [makeEvent(`${playerName} created the game`, 'join')],
     createdAt: Date.now(),
     paused: false,
+    videoLink: videoLink?.trim() || undefined,
     hands: {},
     deck: [],
     socketMap: {},
+    bidCountdownVersion: 0,
   };
 
   games.set(gameId, game);
@@ -508,6 +513,44 @@ export function placeBid(
 
   const allBid = game.players.every(p => game.round!.bids[p.id]?.hasBid);
   return { ok: true, allBid };
+}
+
+// ─────────────────────────────────────────────
+//  Cancel bid countdown (any player)
+// ─────────────────────────────────────────────
+
+export function cancelBidCountdown(
+  gameId: string,
+  playerId: string,
+): { ok: true } | { ok: false; error: string } {
+  const game = games.get(gameId);
+  if (!game) return { ok: false, error: 'Game not found.' };
+  if (!game.round) return { ok: false, error: 'No active round.' };
+  if (game.round.bidCountdown === undefined) return { ok: false, error: 'No countdown in progress.' };
+
+  const player = game.players.find(p => p.id === playerId);
+  if (!player) return { ok: false, error: 'Player not found.' };
+
+  // Abort the running countdown
+  game.bidCountdownVersion += 1;
+  game.round.bidCountdown = undefined;
+
+  // Unlock all bids (keep bid values so inputs stay pre-populated)
+  for (const [pid, bs] of Object.entries(game.round.bids)) {
+    if (bs.hasBid) {
+      game.round.bids[pid] = { hasBid: false, bid: bs.bid };
+    }
+  }
+
+  game.round.bidCancelledBy = player.name;
+  game.eventLog.push(makeEvent(`${player.name} wants to change their bid — countdown cancelled`, 'bid'));
+  return { ok: true };
+}
+
+export function clearBidCancelMessage(gameId: string): void {
+  const game = games.get(gameId);
+  if (!game?.round) return;
+  game.round.bidCancelledBy = undefined;
 }
 
 // ─────────────────────────────────────────────

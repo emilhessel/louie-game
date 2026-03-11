@@ -17,6 +17,8 @@ import {
   flipTrump,
   placeBid,
   revealBids,
+  cancelBidCountdown,
+  clearBidCancelMessage,
   advanceToTrickPlay,
   playCard,
   sweepTrick,
@@ -35,17 +37,24 @@ type Sock = Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents
 /**
  * Runs a 3 → 2 → 1 countdown, then reveals bids, then advances to trick play.
  * Each step takes exactly 1 second; after reveal, 2 more seconds before trick play.
+ * Uses bidCountdownVersion to support cancellation.
  */
 function startBidCountdown(io: IO, gameId: string): void {
+  const game = getGame(gameId);
+  if (!game) return;
+  game.bidCountdownVersion += 1;
+  const myVersion = game.bidCountdownVersion;
+
   const steps = [3, 2, 1] as const;
   let step = 0;
 
   function tick() {
-    const game = getGame(gameId);
-    if (!game || !game.round) return;
+    const g = getGame(gameId);
+    if (!g || !g.round) return;
+    if (g.bidCountdownVersion !== myVersion) return; // cancelled
 
     if (step < steps.length) {
-      game.round.bidCountdown = steps[step];
+      g.round.bidCountdown = steps[step];
       broadcastGameState(io, gameId);
       step++;
       setTimeout(tick, 1000);
@@ -56,6 +65,8 @@ function startBidCountdown(io: IO, gameId: string): void {
 
       // After 2s, advance to trick play
       setTimeout(() => {
+        const g2 = getGame(gameId);
+        if (!g2 || g2.bidCountdownVersion !== myVersion) return;
         advanceToTrickPlay(gameId);
         broadcastGameState(io, gameId);
       }, 2000);
@@ -197,6 +208,24 @@ export function registerSocketHandlers(io: IO, socket: Sock): void {
     }
   });
 
+  // ── Cancel bid countdown (any player) ───────────────────────────────────
+  socket.on('cancel_bid_countdown', ({ gameId }, callback) => {
+    const playerId = socket.data.playerId;
+    if (!playerId) { callback({ ok: false, error: 'Not in a game.' }); return; }
+
+    const result = cancelBidCountdown(gameId, playerId);
+    if (!result.ok) { callback({ ok: false, error: result.error }); return; }
+
+    broadcastGameState(io, gameId);
+    callback({ ok: true });
+
+    // Clear the "wants to change bid" message after 2.5s
+    setTimeout(() => {
+      clearBidCancelMessage(gameId);
+      broadcastGameState(io, gameId);
+    }, 2500);
+  });
+
   // ── Play a card ─────────────────────────────────────────────────────────
   socket.on('play_card', ({ gameId, cardId }, callback) => {
     const playerId = socket.data.playerId;
@@ -209,7 +238,7 @@ export function registerSocketHandlers(io: IO, socket: Sock): void {
     callback({ ok: true });
 
     if (result.trickComplete) {
-      // Pause 1.5s so clients can see the completed trick and winner
+      // Pause 3s so clients can see the completed trick, winner, and cards
       setTimeout(() => {
         sweepTrick(gameId);
 
@@ -228,7 +257,7 @@ export function registerSocketHandlers(io: IO, socket: Sock): void {
         } else {
           broadcastGameState(io, gameId); // phase = trick_play, fresh trick
         }
-      }, 1500);
+      }, 3000);
     }
   });
 

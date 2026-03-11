@@ -40,7 +40,7 @@ app.get('/health', (_req, res) => {
 
 // ── Create game ──────────────────────────────
 app.post('/api/games', (req, res) => {
-  const { playerName } = req.body as CreateGameRequest;
+  const { playerName, videoLink } = req.body as CreateGameRequest;
 
   if (!playerName?.trim()) {
     return res.status(400).json({ ok: false, error: 'Player name is required.' } satisfies ApiError);
@@ -50,7 +50,7 @@ app.post('/api/games', (req, res) => {
     return res.status(400).json({ ok: false, error: 'Name must be 20 characters or less.' } satisfies ApiError);
   }
 
-  const result = createGame(name);
+  const result = createGame(name, videoLink);
   console.log(`[api] Created game ${result.gameId} for "${name}"`);
   return res.status(201).json({
     ok: true,

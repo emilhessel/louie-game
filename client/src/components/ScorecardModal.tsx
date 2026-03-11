@@ -1,9 +1,8 @@
 'use client';
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ClientGameState } from '@louie/shared';
-import { SUIT_SYMBOL, SUIT_COLOR } from '@/lib/cardUtils';
 import { HAND_SIZES } from '@louie/shared';
 
 interface ScorecardModalProps {
@@ -12,7 +11,7 @@ interface ScorecardModalProps {
 }
 
 export default function ScorecardModal({ gameState, onClose }: ScorecardModalProps) {
-  const { players, scoreHistory, currentRound, round } = gameState;
+  const { players, scoreHistory, currentRound } = gameState;
 
   return (
     <motion.div
@@ -50,13 +49,13 @@ export default function ScorecardModal({ gameState, onClose }: ScorecardModalPro
           </button>
         </div>
 
-        {/* Table */}
-        <div className="overflow-auto scroll-thin px-5 py-4">
+        {/* Table — rows scroll, totals row is always visible */}
+        <div className="flex-1 min-h-0 overflow-auto scroll-thin px-5 py-4">
           <table className="w-full text-sm border-collapse min-w-[520px]">
             <thead>
               <tr>
                 <th className="text-left text-xs text-cream/40 uppercase tracking-widest pb-3 pr-3 font-normal w-16">Rnd</th>
-                <th className="text-left text-xs text-cream/40 uppercase tracking-widest pb-3 pr-3 font-normal w-10">♠</th>
+                <th className="text-left text-xs text-cream/40 uppercase tracking-widest pb-3 pr-3 font-normal w-10">Cards</th>
                 {players.map(p => (
                   <th key={p.id} className="text-center pb-3 px-2 font-normal min-w-[80px]">
                     <span className="text-xs text-cream/70 truncate block max-w-[80px] mx-auto">
@@ -73,15 +72,8 @@ export default function ScorecardModal({ gameState, onClose }: ScorecardModalPro
             <tbody>
               {HAND_SIZES.map((handSize, idx) => {
                 const roundNum = idx + 1;
-                const isPast = roundNum < currentRound;
                 const isCurrent = roundNum === currentRound;
                 const isFuture = roundNum > currentRound;
-
-                // Find trump for this round from scoreHistory (we only have current round's trump live)
-                const trumpCard = isCurrent ? round?.trump : undefined;
-                const trumpColor = trumpCard
-                  ? (SUIT_COLOR[trumpCard.suit] === '#1a1a1a' ? '#f5f0e8' : SUIT_COLOR[trumpCard.suit])
-                  : undefined;
 
                 return (
                   <tr
@@ -97,14 +89,9 @@ export default function ScorecardModal({ gameState, onClose }: ScorecardModalPro
                       {isCurrent && <span className="text-gold ml-1">◀</span>}
                     </td>
 
-                    {/* Hand size + trump */}
+                    {/* Hand size only (no trump suit) */}
                     <td className="py-2 pr-3">
                       <span className="text-cream/40 font-mono text-xs">{handSize}</span>
-                      {trumpCard && (
-                        <span className="ml-1 text-xs" style={{ color: trumpColor }}>
-                          {SUIT_SYMBOL[trumpCard.suit]}
-                        </span>
-                      )}
                     </td>
 
                     {/* Per-player score cells */}
@@ -136,20 +123,22 @@ export default function ScorecardModal({ gameState, onClose }: ScorecardModalPro
                         </td>
                       );
                     })}
-
                   </tr>
                 );
               })}
             </tbody>
 
-            {/* Totals footer */}
+            {/* Totals footer — sticky so it's always visible */}
             <tfoot>
-              <tr className="border-t-2 border-gold/30">
-                <td colSpan={2} className="pt-3 pb-1 text-xs text-cream/40 uppercase tracking-widest">
+              <tr
+                className="border-t-2 border-gold/30"
+                style={{ position: 'sticky', bottom: 0, background: 'rgba(8, 20, 12, 0.97)' }}
+              >
+                <td colSpan={2} className="pt-3 pb-2 text-xs text-cream/40 uppercase tracking-widest">
                   Total
                 </td>
                 {players.map(player => (
-                  <td key={player.id} className="pt-3 pb-1 text-center">
+                  <td key={player.id} className="pt-3 pb-2 text-center">
                     <span className="text-gold font-bold font-mono text-base">
                       {player.score}
                     </span>

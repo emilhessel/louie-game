@@ -23,13 +23,6 @@ export const SUIT_COLOR: Record<Suit, string> = {
 // ─────────────────────────────────────────────
 
 /**
- * Suit order (spec): spades → hearts → clubs → diamonds
- */
-const SUIT_ORDER: Record<Suit, number> = {
-  spades: 0, hearts: 1, clubs: 2, diamonds: 3,
-};
-
-/**
  * Rank order: Ace high (0 = highest → 12 = lowest)
  */
 const RANK_ORDER: Record<Rank, number> = {
@@ -38,14 +31,35 @@ const RANK_ORDER: Record<Rank, number> = {
   '5': 9, '4': 10, '3': 11, '2': 12,
 };
 
+/** Default suit order */
+export const DEFAULT_SUIT_ORDER: Suit[] = ['spades', 'hearts', 'clubs', 'diamonds'];
+
+/** Player-configurable sort preferences */
+export interface SortPrefs {
+  suitOrder: Suit[];
+  rankDirection: 'high-to-low' | 'low-to-high';
+}
+
+export const DEFAULT_SORT_PREFS: SortPrefs = {
+  suitOrder: DEFAULT_SUIT_ORDER,
+  rankDirection: 'high-to-low',
+};
+
 /**
- * Sort a hand by suit group (S → H → C → D), then by rank descending (A → 2).
+ * Sort a hand by suit group, then by rank.
+ * Uses SortPrefs if provided, otherwise uses defaults.
  * Returns a new array; does not mutate the original.
  */
-export function sortHand(hand: Card[]): Card[] {
+export function sortHand(hand: Card[], prefs?: SortPrefs): Card[] {
+  const suitOrder = prefs?.suitOrder ?? DEFAULT_SUIT_ORDER;
+  const rankDesc = !prefs || prefs.rankDirection === 'high-to-low';
+
+  const suitIndexMap = Object.fromEntries(suitOrder.map((s, i) => [s, i])) as Record<Suit, number>;
+
   return [...hand].sort((a, b) => {
-    const suitDiff = SUIT_ORDER[a.suit] - SUIT_ORDER[b.suit];
+    const suitDiff = suitIndexMap[a.suit] - suitIndexMap[b.suit];
     if (suitDiff !== 0) return suitDiff;
-    return RANK_ORDER[a.rank] - RANK_ORDER[b.rank];
+    const rankDiff = RANK_ORDER[a.rank] - RANK_ORDER[b.rank];
+    return rankDesc ? rankDiff : -rankDiff;
   });
 }

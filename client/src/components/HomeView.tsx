@@ -14,6 +14,7 @@ export default function HomeView() {
   const [mode, setMode] = useState<Mode>('home');
   const [name, setName] = useState('');
   const [gameId, setGameId] = useState('');
+  const [videoLink, setVideoLink] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fullGameOffer, setFullGameOffer] = useState<string | null>(null); // gameId if game is full
@@ -33,7 +34,7 @@ export default function HomeView() {
       const res = await fetch(`${SERVER_URL}/api/games`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerName: name.trim() }),
+        body: JSON.stringify({ playerName: name.trim(), videoLink: videoLink.trim() || undefined }),
       });
       const data: CreateGameResponse | ApiError = await res.json();
 
@@ -166,6 +167,17 @@ export default function HomeView() {
                 onChange={e => setName(e.target.value)}
                 maxLength={20}
                 autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-cream/50 uppercase tracking-widest mb-1.5">
+                Video Call Link <span className="normal-case text-cream/30">(optional)</span>
+              </label>
+              <input
+                className="input-felt"
+                placeholder="e.g. zoom.us/j/123456"
+                value={videoLink}
+                onChange={e => setVideoLink(e.target.value)}
               />
             </div>
             {error && <p className="text-red-400 text-sm">{error}</p>}

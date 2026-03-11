@@ -61,6 +61,8 @@ interface UseGameStateReturn {
   placeBid: (gameId: string, bid: number) => Promise<ActionResult>;
   /** Emit play_card. */
   playCard: (gameId: string, cardId: string) => Promise<ActionResult>;
+  /** Emit cancel_bid_countdown. Any player can call this. */
+  cancelBidCountdown: (gameId: string) => Promise<ActionResult>;
   /** Emit ready_next_round. */
   readyNextRound: (gameId: string) => Promise<ActionResult>;
 }
@@ -173,11 +175,17 @@ export function useGameState(): UseGameStateReturn {
     return new Promise(resolve => socket.emit('play_card', { gameId, cardId }, resolve));
   }, []);
 
+  const cancelBidCountdown = useCallback(async (gameId: string): Promise<ActionResult> => {
+    const socket = socketRef.current;
+    if (!socket) return { ok: false, error: 'Not connected.' };
+    return new Promise(resolve => socket.emit('cancel_bid_countdown', { gameId }, resolve));
+  }, []);
+
   const readyNextRound = useCallback(async (gameId: string): Promise<ActionResult> => {
     const socket = socketRef.current;
     if (!socket) return { ok: false, error: 'Not connected.' };
     return new Promise(resolve => socket.emit('ready_next_round', { gameId }, resolve));
   }, []);
 
-  return { gameState, connected, error, tryRejoin, startGame, dealCard, finishDealing, flipTrump, placeBid, playCard, readyNextRound };
+  return { gameState, connected, error, tryRejoin, startGame, dealCard, finishDealing, flipTrump, placeBid, playCard, cancelBidCountdown, readyNextRound };
 }
