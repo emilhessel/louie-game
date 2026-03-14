@@ -40,7 +40,7 @@ export default function GamePage({ gameId }: GamePageProps) {
     const count = gameState?.round?.completedTricks.length ?? 0;
     if (count > prevCompletedTricksRef.current) {
       setLastTrickFlash(true);
-      const t = setTimeout(() => setLastTrickFlash(false), 2000);
+      const t = setTimeout(() => setLastTrickFlash(false), 3000);
       prevCompletedTricksRef.current = count;
       return () => clearTimeout(t);
     }
@@ -272,8 +272,8 @@ export default function GamePage({ gameId }: GamePageProps) {
       {showLastTrick && (
         <button
           onClick={() => { setLastTrickOpen(true); setLastTrickFlash(false); }}
-          className={`btn-secondary w-36 py-2 text-sm text-center shadow-lg transition-all ${
-            lastTrickFlash ? 'border-gold/80 shadow-[0_0_12px_rgba(201,168,76,0.5)]' : ''
+          className={`btn-secondary w-36 py-2 text-sm text-center shadow-lg ${
+            lastTrickFlash ? 'attention-glow' : ''
           }`}
         >
           🎴 Last Trick
