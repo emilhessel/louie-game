@@ -57,7 +57,7 @@ function startBidCountdown(io: IO, gameId: string): void {
       g.round.bidCountdown = steps[step];
       broadcastGameState(io, gameId);
       step++;
-      setTimeout(tick, 1000);
+      setTimeout(tick, 1250);
     } else {
       // Countdown finished — reveal bids
       revealBids(gameId);
@@ -69,11 +69,11 @@ function startBidCountdown(io: IO, gameId: string): void {
         if (!g2 || g2.bidCountdownVersion !== myVersion) return;
         advanceToTrickPlay(gameId);
         broadcastGameState(io, gameId);
-      }, 5000);
+      }, 7500);
     }
   }
 
-  setTimeout(tick, 1000); // 1s pause after last bid before "3" appears
+  setTimeout(tick, 1000); // 1s pause after last bid before "3" appears — kept short intentionally
 }
 
 // ─────────────────────────────────────────────
