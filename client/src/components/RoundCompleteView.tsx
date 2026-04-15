@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ClientGameState } from '@louie/shared';
 import { SUIT_SYMBOL, SUIT_COLOR } from '@/lib/cardUtils';
@@ -16,6 +16,12 @@ export default function RoundCompleteView({ gameState, onReady }: RoundCompleteV
   const isSpectator = !gameState.myPlayerId || gameState.myPlayerId === '';
 
   const [readying, setReadying] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(30);
+
+  useEffect(() => {
+    const id = setInterval(() => setSecondsLeft(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, []);
   const myReady = round.playersReady?.includes(gameState.myPlayerId) ?? false;
   const readyCount = round.playersReady?.length ?? 0;
   const totalPlayers = gameState.players.length;
@@ -74,7 +80,10 @@ export default function RoundCompleteView({ gameState, onReady }: RoundCompleteV
           transition={{ delay: 0.1 }}
           className="panel px-5 py-4"
         >
-          <p className="text-xs text-cream/40 uppercase tracking-widest mb-4">Round Scores</p>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs text-cream/40 uppercase tracking-widest">Round Scores</p>
+            <p className="text-xs text-emerald-400/50">★ made bid</p>
+          </div>
 
           <div className="overflow-x-auto">
           <div className="space-y-2 min-w-[360px]">
@@ -179,7 +188,7 @@ export default function RoundCompleteView({ gameState, onReady }: RoundCompleteV
                 >
                   {readying ? 'Getting ready…' : '▶ Ready for Next Round'}
                 </motion.button>
-                <p className="text-cream/20 text-xs">Auto-advances in 30s if not everyone is ready</p>
+                <p className="text-cream/20 text-xs">Auto-advances in {secondsLeft}s if not everyone is ready</p>
               </div>
             )}
           </motion.div>

@@ -1,7 +1,8 @@
 'use client';
 
 import { Card, Suit } from '@louie/shared';
-import { SUIT_SYMBOL, SUIT_COLOR } from '@/lib/cardUtils';
+import { SUIT_COLOR } from '@/lib/cardUtils';
+import { SuitIcon } from './SuitIcon';
 
 // ─────────────────────────────────────────────
 //  Size presets
@@ -31,7 +32,6 @@ interface PlayingCardProps {
 export function PlayingCard({ card, size = 'md', selected, disabled, onClick }: PlayingCardProps) {
   const { w, h, rankFs, suitFs, centerFs } = DIMS[size];
   const color = SUIT_COLOR[card.suit];
-  const symbol = SUIT_SYMBOL[card.suit];
   const clickable = !!onClick && !disabled;
 
   return (
@@ -66,7 +66,7 @@ export function PlayingCard({ card, size = 'md', selected, disabled, onClick }: 
         lineHeight: 1.1, color,
       }}>
         <span style={{ fontSize: rankFs, fontWeight: 700, fontFamily: 'var(--font-inter)' }}>{card.rank}</span>
-        <span style={{ fontSize: suitFs }}>{symbol}</span>
+        <SuitIcon suit={card.suit} size={suitFs} />
       </div>
 
       {/* Center suit symbol */}
@@ -74,7 +74,7 @@ export function PlayingCard({ card, size = 'md', selected, disabled, onClick }: 
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
         color, fontSize: centerFs,
       }}>
-        {symbol}
+        <SuitIcon suit={card.suit} size={centerFs} />
       </div>
 
       {/* Bottom-right corner (rotated 180°) */}
@@ -84,7 +84,7 @@ export function PlayingCard({ card, size = 'md', selected, disabled, onClick }: 
         lineHeight: 1.1, color, transform: 'rotate(180deg)',
       }}>
         <span style={{ fontSize: rankFs, fontWeight: 700, fontFamily: 'var(--font-inter)' }}>{card.rank}</span>
-        <span style={{ fontSize: suitFs }}>{symbol}</span>
+        <SuitIcon suit={card.suit} size={suitFs} />
       </div>
     </div>
   );
