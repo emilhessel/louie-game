@@ -53,17 +53,13 @@ export default function SeatCard({ seatIndex, player, isDealer, isHost, isYou }:
         {player.name}
       </span>
 
-      {/* Connection status */}
-      <div className="flex items-center gap-1 mt-auto">
-        <div
-          className={`w-1.5 h-1.5 rounded-full ${
-            player.connected ? 'bg-emerald-400' : 'bg-red-400'
-          }`}
-        />
-        <span className="text-xs text-cream/40">
-          {player.connected ? 'connected' : 'offline'}
-        </span>
-      </div>
+      {/* Disconnected indicator */}
+      {!player.connected && (
+        <div className="flex items-center gap-1 mt-auto">
+          <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+          <span className="text-xs text-red-400">offline</span>
+        </div>
+      )}
 
       {/* Score */}
       {player.score > 0 && (

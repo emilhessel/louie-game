@@ -8,7 +8,10 @@
       "Bash(npm:*)",
       "Bash(npx next:*)",
       "Bash(ls:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(chmod 644:*)",
+      "Bash(chmod u+w:*)",
+      "Bash(xattr:*)"
     ]
   }
 }

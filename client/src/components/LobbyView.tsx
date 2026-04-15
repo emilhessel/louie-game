@@ -142,7 +142,7 @@ export default function LobbyView({ gameState, onStartGame }: LobbyViewProps) {
               <div className="flex flex-wrap gap-2">
                 {gameState.spectators.map(s => (
                   <div key={s.id} className="flex items-center gap-1.5 text-sm text-cream/60">
-                    <div className={`w-1.5 h-1.5 rounded-full ${s.connected ? 'bg-emerald-400' : 'bg-gray-500'}`} />
+                    {!s.connected && <div className="w-1.5 h-1.5 rounded-full bg-red-400" />}
                     {s.name}
                   </div>
                 ))}

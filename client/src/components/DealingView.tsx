@@ -213,7 +213,12 @@ export default function DealingView({ gameState, onDealCard, onFinishDealing }: 
                   </motion.div>
                   <span className="text-xs text-cream/30">/ {round.handSize}</span>
 
-                  <div className={`w-1.5 h-1.5 rounded-full mt-1 ${player.connected ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                  {!player.connected && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                      <span className="text-xs text-red-400">offline</span>
+                    </div>
+                  )}
 
                   {clickable && (
                     <span className="text-gold/60 text-xs">deal ↓</span>
