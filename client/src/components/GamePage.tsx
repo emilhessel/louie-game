@@ -14,6 +14,7 @@ import RoundCompleteView from './RoundCompleteView';
 import GameOverView from './GameOverView';
 import ScorecardModal from './ScorecardModal';
 import LastTrickModal from './LastTrickModal';
+import ChatFeed from './ChatFeed';
 
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3001';
 
@@ -25,7 +26,7 @@ type JoinStatus = 'loading' | 'needs_name' | 'joining' | 'connected' | 'error';
 
 export default function GamePage({ gameId }: GamePageProps) {
   const router = useRouter();
-  const { gameState, connected, error: socketError, tryRejoin, startGame, dealCard, finishDealing, flipTrump, placeBid, playCard, cancelBidCountdown, readyNextRound } = useGameState();
+  const { gameState, messages, connected, error: socketError, tryRejoin, startGame, dealCard, finishDealing, flipTrump, placeBid, playCard, cancelBidCountdown, readyNextRound, sendMessage } = useGameState();
 
   const [status, setStatus] = useState<JoinStatus>('loading');
   const [pageError, setPageError] = useState<string | null>(null);
@@ -134,6 +135,7 @@ export default function GamePage({ gameId }: GamePageProps) {
   const handlePlayCard = useCallback((cardId: string) => playCard(gameId, cardId), [playCard, gameId]);
   const handleCancelBidCountdown = useCallback(() => cancelBidCountdown(gameId), [cancelBidCountdown, gameId]);
   const handleReadyNextRound = useCallback(() => readyNextRound(gameId), [readyNextRound, gameId]);
+  const handleSendMessage = useCallback((text: string) => sendMessage(gameId, text), [sendMessage, gameId]);
 
   const copyVideoLink = useCallback(async () => {
     if (!gameState?.videoLink) return;
@@ -260,7 +262,7 @@ export default function GamePage({ gameId }: GamePageProps) {
 
   // Fixed button cluster (bottom-right)
   const fixedButtons = showActivePhase && (
-    <div className="fixed bottom-5 right-5 z-40 flex flex-col gap-2 items-end">
+    <div className="fixed bottom-32 right-3 z-40 flex flex-col gap-2 items-end">
       {gameState.videoLink && (
         <button
           onClick={copyVideoLink}
@@ -340,6 +342,11 @@ export default function GamePage({ gameId }: GamePageProps) {
           <LastTrickModal trick={lastTrick} onClose={() => setLastTrickOpen(false)} />
         )}
       </AnimatePresence>
+      <ChatFeed
+        messages={messages}
+        myPlayerId={gameState.myPlayerId}
+        onSend={handleSendMessage}
+      />
     </>
   );
 }

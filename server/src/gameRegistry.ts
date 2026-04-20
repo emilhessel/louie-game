@@ -3,6 +3,7 @@ import {
   Player,
   Spectator,
   GameEvent,
+  ChatMessage,
   Card,
   Rank,
   Suit,
@@ -30,6 +31,8 @@ export interface ServerGame extends GameState {
   /** Incremented to abort a running bid countdown */
   bidCountdownVersion: number;
 }
+
+const CHAT_RING_BUFFER = 50;
 
 // ─────────────────────────────────────────────
 //  Registry
@@ -107,6 +110,7 @@ export function createGame(
     deckRemaining: 0,
     scoreHistory: {},
     eventLog: [makeEvent(`${playerName} created the game`, 'join')],
+    messages: [],
     createdAt: Date.now(),
     paused: false,
     videoLink: videoLink?.trim() || undefined,
@@ -406,6 +410,45 @@ export function resetForReDeal(gameId: string): void {
 }
 
 // ─────────────────────────────────────────────
+//  Chat
+// ─────────────────────────────────────────────
+
+export function addChatMessage(
+  gameId: string,
+  playerId: string,
+  text: string,
+): { ok: true; message: ChatMessage } | { ok: false; error: string } {
+  const game = games.get(gameId);
+  if (!game) return { ok: false, error: 'Game not found.' };
+
+  const trimmed = text.trim();
+  if (!trimmed) return { ok: false, error: 'Message cannot be empty.' };
+  if (trimmed.length > 200) return { ok: false, error: 'Message too long (max 200 chars).' };
+
+  const player = game.players.find(p => p.id === playerId);
+  const spectator = game.spectators.find(s => s.id === playerId);
+  const sender = player ?? spectator;
+  if (!sender) return { ok: false, error: 'Sender not found in game.' };
+
+  const msg: ChatMessage = {
+    id: uuidv4(),
+    playerId,
+    playerName: sender.name,
+    text: trimmed,
+    timestamp: Date.now(),
+    isSpectator: !player,
+  };
+
+  game.messages.push(msg);
+  // Trim to ring buffer size
+  if (game.messages.length > CHAT_RING_BUFFER) {
+    game.messages.splice(0, game.messages.length - CHAT_RING_BUFFER);
+  }
+
+  return { ok: true, message: msg };
+}
+
+// ─────────────────────────────────────────────
 //  Getters
 // ─────────────────────────────────────────────
 
@@ -415,9 +458,9 @@ export function getGame(gameId: string): ServerGame | undefined {
 
 /** Build the state object safe to send to a specific client. */
 export function getClientState(game: ServerGame, playerId: string): ClientGameState {
-  // Strip server-only fields (deck never goes to clients)
+  // Strip server-only fields (deck, hands never go to clients)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { hands, deck: _deck, socketMap, ...publicState } = game;
+  const { hands, deck: _deck, socketMap, bidCountdownVersion: _bcv, ...publicState } = game;
 
   // Hide other players' bid VALUES until all bids are locked and revealed
   let round = publicState.round;

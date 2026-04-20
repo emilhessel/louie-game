@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import {
   ClientGameState,
+  ChatMessage,
   ServerToClientEvents,
   ClientToServerEvents,
   LouieSession,
@@ -45,6 +46,7 @@ type ActionResult = { ok: true } | { ok: false; error: string };
 
 interface UseGameStateReturn {
   gameState: ClientGameState | null;
+  messages: ChatMessage[];
   connected: boolean;
   error: string | null;
   /** Attempt to rejoin using a saved session. Returns true if successful. */
@@ -65,12 +67,15 @@ interface UseGameStateReturn {
   cancelBidCountdown: (gameId: string) => Promise<ActionResult>;
   /** Emit ready_next_round. */
   readyNextRound: (gameId: string) => Promise<ActionResult>;
+  /** Emit send_message. */
+  sendMessage: (gameId: string, text: string) => Promise<ActionResult>;
 }
 
 export function useGameState(): UseGameStateReturn {
   const socketRef = useRef<LouieSocket | null>(null);
   const [connected, setConnected] = useState(false);
   const [gameState, setGameState] = useState<ClientGameState | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Create socket once on mount
@@ -93,6 +98,18 @@ export function useGameState(): UseGameStateReturn {
 
     socket.on('game_state', (state) => {
       setGameState(state);
+      // Seed / re-sync messages from snapshot (handles reconnect recovery)
+      setMessages(prev => {
+        const incoming = state.messages ?? [];
+        if (incoming.length === 0) return prev;
+        const prevIds = new Set(prev.map(m => m.id));
+        const newOnes = incoming.filter(m => !prevIds.has(m.id));
+        return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
+      });
+    });
+
+    socket.on('chat_message', (msg) => {
+      setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
     });
 
     socket.on('error', ({ message }) => {
@@ -187,5 +204,11 @@ export function useGameState(): UseGameStateReturn {
     return new Promise(resolve => socket.emit('ready_next_round', { gameId }, resolve));
   }, []);
 
-  return { gameState, connected, error, tryRejoin, startGame, dealCard, finishDealing, flipTrump, placeBid, playCard, cancelBidCountdown, readyNextRound };
+  const sendMessage = useCallback(async (gameId: string, text: string): Promise<ActionResult> => {
+    const socket = socketRef.current;
+    if (!socket) return { ok: false, error: 'Not connected.' };
+    return new Promise(resolve => socket.emit('send_message', { gameId, text }, resolve));
+  }, []);
+
+  return { gameState, messages, connected, error, tryRejoin, startGame, dealCard, finishDealing, flipTrump, placeBid, playCard, cancelBidCountdown, readyNextRound, sendMessage };
 }

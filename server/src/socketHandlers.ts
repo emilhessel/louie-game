@@ -25,6 +25,7 @@ import {
   scoreRound,
   readyForNextRound,
   advanceToNextRound,
+  addChatMessage,
 } from './gameRegistry';
 
 type IO = Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
@@ -276,6 +277,19 @@ export function registerSocketHandlers(io: IO, socket: Sock): void {
       advanceToNextRound(gameId);
       broadcastGameState(io, gameId);
     }
+  });
+
+  // ── Chat message ─────────────────────────────────────────────────────────
+  socket.on('send_message', ({ gameId, text }, callback) => {
+    const playerId = socket.data.playerId;
+    if (!playerId) { callback({ ok: false, error: 'Not in a game.' }); return; }
+
+    const result = addChatMessage(gameId, playerId, text);
+    if (!result.ok) { callback({ ok: false, error: result.error }); return; }
+
+    // Emit the message directly to all room members (no full state broadcast)
+    io.to(gameId).emit('chat_message', result.message);
+    callback({ ok: true });
   });
 
   // ── Disconnect ───────────────────────────────────────────────────────────

@@ -48,6 +48,19 @@ export type Phase =
   | 'game_over';
 
 // ─────────────────────────────────────────────
+//  Chat
+// ─────────────────────────────────────────────
+
+export interface ChatMessage {
+  id: string;
+  playerId: string;
+  playerName: string;
+  text: string;
+  timestamp: number;
+  isSpectator: boolean;
+}
+
+// ─────────────────────────────────────────────
 //  Event log
 // ─────────────────────────────────────────────
 
@@ -147,6 +160,7 @@ export interface GameState {
   deckRemaining: number;  // cards left in dealer's hand during dealing phase
   scoreHistory: Record<string, ScoreEntry[]>; // playerId → round entries
   eventLog: GameEvent[];
+  messages: ChatMessage[];
   createdAt: number;
   paused: boolean;        // true when a player is disconnected mid-game
   /** Optional video-conference link set at game creation */
@@ -168,6 +182,7 @@ export type ClientGameState = GameState & {
 
 export interface ServerToClientEvents {
   game_state: (state: ClientGameState) => void;
+  chat_message: (msg: ChatMessage) => void;
   error: (payload: { message: string }) => void;
 }
 
@@ -206,6 +221,10 @@ export interface ClientToServerEvents {
   ) => void;
   ready_next_round: (
     data: { gameId: string },
+    callback: (res: { ok: true } | { ok: false; error: string }) => void,
+  ) => void;
+  send_message: (
+    data: { gameId: string; text: string },
     callback: (res: { ok: true } | { ok: false; error: string }) => void,
   ) => void;
 }
