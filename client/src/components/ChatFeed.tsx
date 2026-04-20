@@ -42,7 +42,14 @@ export default function ChatFeed({ messages, myPlayerId, onSend }: ChatFeedProps
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#0a150a]/90 backdrop-blur-sm">
+    <div
+      className="fixed bottom-0 left-0 right-0 z-30"
+      style={{
+        background: 'rgba(0,0,0,0.72)',
+        borderTop: '1px solid rgba(201,168,76,0.35)',
+        backdropFilter: 'blur(4px)',
+      }}
+    >
       {/* Message feed */}
       <div
         ref={feedRef}
@@ -82,13 +89,13 @@ export default function ChatFeed({ messages, myPlayerId, onSend }: ChatFeedProps
           onKeyDown={handleKeyDown}
           placeholder="Message…"
           maxLength={200}
-          className="flex-1 bg-white/5 border border-white/10 rounded-md px-3 py-1.5 text-sm text-cream placeholder-cream/20 focus:outline-none focus:border-gold/40"
+          className="input-felt flex-1 py-1.5 text-sm"
           autoComplete="off"
         />
         <button
           type="submit"
           disabled={!text.trim()}
-          className="text-gold/70 hover:text-gold disabled:text-cream/20 text-sm px-2 py-1.5 transition-colors"
+          className="btn-primary px-3 py-1.5 text-sm disabled:opacity-30"
           aria-label="Send"
         >
           Send
