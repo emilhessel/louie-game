@@ -342,12 +342,11 @@ export default function GamePage({ gameId }: GamePageProps) {
           <LastTrickModal trick={lastTrick} onClose={() => setLastTrickOpen(false)} />
         )}
       </AnimatePresence>
-      {/* ChatFeed disabled temporarily — covers gameplay on mobile */}
-      {/* <ChatFeed
+      <ChatFeed
         messages={messages}
         myPlayerId={gameState.myPlayerId}
         onSend={handleSendMessage}
-      /> */}
+      />
     </>
   );
 }
